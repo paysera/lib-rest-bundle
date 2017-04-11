@@ -185,6 +185,7 @@
 
         <service id="paysera_rest.security_strategy.role_and_ip" abstract="true"
                  class="Paysera\Bundle\RestBundle\Security\RoleAndIpStrategy">
+            <argument type="service" id="security.role_hierarchy"/>
             <argument type="service" id="security.token_storage" />
             <argument type="service" id="logger" />
         </service>

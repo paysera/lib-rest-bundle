@@ -5,6 +5,7 @@ namespace Paysera\Bundle\RestBundle\Tests\Security;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\Authentication\Token\AnonymousToken;
 use Paysera\Bundle\RestBundle\Security\RoleAndIpStrategy;
+use Symfony\Component\Security\Core\Role\RoleHierarchy;
 use Symfony\Component\HttpFoundation\Request;
 use PHPUnit_Framework_MockObject_MockObject;
 use PHPUnit_Framework_TestCase;
@@ -12,6 +13,17 @@ use Psr\Log\NullLogger;
 
 class RoleAndIpStrategyTest extends PHPUnit_Framework_TestCase
 {
+
+    private $roleHierarchy = [
+        'ROLE_SUPER_ADMIN' => [
+            'ROLE_ADMIN',
+            'ROLE_USER',
+        ],
+        'ROLE_ADMIN' => [
+            'ROLE_USER'
+        ],
+    ];
+
     /**
      * @var RoleAndIpStrategy
      */
@@ -24,10 +36,11 @@ class RoleAndIpStrategyTest extends PHPUnit_Framework_TestCase
         $tokenStorageMock
             ->expects($this->any())
             ->method('getToken')
-            ->willReturn(new AnonymousToken('secret', 'user', ['ROLE_API_USER']))
+            ->willReturn(new AnonymousToken('secret', 'user', ['ROLE_ADMIN']))
         ;
 
         $this->strategy = new RoleAndIpStrategy(
+            new RoleHierarchy($this->roleHierarchy),
             $tokenStorageMock,
             new NullLogger()
         );
@@ -62,12 +75,17 @@ class RoleAndIpStrategyTest extends PHPUnit_Framework_TestCase
             'case_invalid_role' => [
                 false,
                 $this->createRequest(),
-                ['ROLE_ACCESS_DIFFERENT_RESOURCE']
+                ['ROLE_SUPER_ADMIN']
             ],
             'case_valid_role' => [
                 true,
                 $this->createRequest(),
-                ['ROLE_API_USER']
+                ['ROLE_ADMIN']
+            ],
+            'case_valid_sub_role' => [
+                true,
+                $this->createRequest(),
+                ['ROLE_USER']
             ],
             'case_invalid_ip' => [
                 false,
@@ -81,10 +99,10 @@ class RoleAndIpStrategyTest extends PHPUnit_Framework_TestCase
                 [],
                 ['127.0.0.1']
             ],
-            'case_valid_role_and_ip' => [
+            'case_valid_multiple_roles_and_ip' => [
                 true,
                 $this->createRequest(['REMOTE_ADDR' => '127.0.0.1']),
-                ['ROLE_API_USER'],
+                ['ROLE_USER', 'ROLE_ADMIN'],
                 ['127.0.0.1']
             ]
         ];

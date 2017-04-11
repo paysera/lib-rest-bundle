@@ -3,6 +3,7 @@
 namespace Paysera\Bundle\RestBundle\Security;
 
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
+use Symfony\Component\Security\Core\Role\RoleHierarchyInterface;
 use Symfony\Component\Security\Core\Role\RoleInterface;
 use Symfony\Component\HttpFoundation\IpUtils;
 use Symfony\Component\HttpFoundation\Request;
@@ -10,6 +11,7 @@ use Psr\Log\LoggerInterface;
 
 class RoleAndIpStrategy implements SecurityStrategyInterface
 {
+    private $roleHierarchy;
     private $tokenStorage;
     private $logger;
 
@@ -17,9 +19,11 @@ class RoleAndIpStrategy implements SecurityStrategyInterface
     private $ips = [];
 
     public function __construct(
+        RoleHierarchyInterface $roleHierarchy,
         TokenStorageInterface $tokenStorage,
         LoggerInterface $logger
     ) {
+        $this->roleHierarchy = $roleHierarchy;
         $this->tokenStorage = $tokenStorage;
         $this->logger = $logger;
     }
@@ -45,7 +49,7 @@ class RoleAndIpStrategy implements SecurityStrategyInterface
 
         $availableRoles = array_map(function (RoleInterface $role) {
             return $role->getRole();
-        }, $token->getRoles());
+        }, $this->roleHierarchy->getReachableRoles($token->getRoles()));
 
         foreach ($this->roles as $role) {
             if (!in_array($role, $availableRoles, true)) {
