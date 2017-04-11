@@ -13,7 +13,6 @@ use Psr\Log\NullLogger;
 
 class RoleAndIpStrategyTest extends PHPUnit_Framework_TestCase
 {
-
     private $roleHierarchy = [
         'ROLE_SUPER_ADMIN' => [
             'ROLE_ADMIN',
