@@ -14,7 +14,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Paysera\Bundle\RestBundle\Entity\ErrorConfig;
 use Paysera\Bundle\RestBundle\Security\SecurityStrategyInterface;
-use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
+use Paysera\Component\Serializer\Normalizer\NormalizerInterface;
 
 class RestApi
 {

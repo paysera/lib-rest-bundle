@@ -29,7 +29,7 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Validator\ValidatorInterface;
+use Symfony\Component\Validator\Validator\RecursiveValidator;
 
 class ApiManager
 {
@@ -80,13 +80,13 @@ class ApiManager
      *
      * @param FormatDetector     $formatDetector
      * @param LoggerInterface    $logger
-     * @param ValidatorInterface $validator
+     * @param RecursiveValidator $validator
      * @param string             $routingAttribute
      */
     public function __construct(
         FormatDetector $formatDetector,
         LoggerInterface $logger,
-        ValidatorInterface $validator,
+        RecursiveValidator $validator,
         $routingAttribute = 'api_key'
     ) {
         $this->logger = $logger;
@@ -174,7 +174,7 @@ class ApiManager
             $this->fillErrorDefaults($error, $api);
             try {
                 $encoder = $this->getEncoderForApi($request, $api);
-                $result = $encoder->encode($error->toArray(), $request);
+                $result = $encoder->encode($error->toArray());
                 $headers = array('Content-Type' => $encoder->getContentType());
             } catch (ApiException $exception) {
                 if ($exception->getErrorCode() === $exception::NOT_ACCEPTABLE) {
