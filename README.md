@@ -72,6 +72,7 @@ class ApiController
         <argument>app_bundle.normalizer.data</argument>
         <argument>app_bundle.controller.api_controller:saveData</argument>
         <argument>data</argument>
+        <argument type="collection" />
     </call>
     
     <call method="addResponseMapper">

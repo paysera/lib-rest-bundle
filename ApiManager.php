@@ -29,7 +29,7 @@ use Symfony\Component\Security\Core\Exception\AccessDeniedException;
 use Symfony\Component\Security\Core\Exception\AuthenticationException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Validator\ValidatorInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class ApiManager
 {
@@ -174,7 +174,7 @@ class ApiManager
             $this->fillErrorDefaults($error, $api);
             try {
                 $encoder = $this->getEncoderForApi($request, $api);
-                $result = $encoder->encode($error->toArray(), $request);
+                $result = $encoder->encode($error->toArray());
                 $headers = array('Content-Type' => $encoder->getContentType());
             } catch (ApiException $exception) {
                 if ($exception->getErrorCode() === $exception::NOT_ACCEPTABLE) {

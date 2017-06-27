@@ -5,20 +5,19 @@ namespace Paysera\Bundle\RestBundle\Normalizer;
 use Paysera\Component\Serializer\Normalizer\BaseDenormalizer;
 use Symfony\Component\Validator\ConstraintViolation;
 use Paysera\Component\Serializer\Exception\InvalidDataException;
-use Symfony\Component\Validator\ValidatorInterface as LegacyValidatorInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 abstract class ValidatorAwareDenormalizer extends BaseDenormalizer
 {
     /**
-     * @var ValidatorInterface|LegacyValidatorInterface
+     * @var ValidatorInterface
      */
     protected $validator;
 
     /**
      * Called from configuration
      *
-     * @param ValidatorInterface|LegacyValidatorInterface $validator
+     * @param ValidatorInterface $validator
      */
     public function setValidator($validator)
     {
