@@ -2,6 +2,8 @@
 
 namespace Paysera\Bundle\RestBundle\Tests;
 
+use Mockery;
+use Mockery\MockInterface;
 use Paysera\Bundle\RestBundle\ApiManager;
 use Paysera\Bundle\RestBundle\Exception\ApiException;
 use Paysera\Bundle\RestBundle\Listener\RestListener;
@@ -31,24 +33,25 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class RestListenerPathConverterTest extends \PHPUnit_Framework_TestCase
 {
-    /** @var \Mockery\MockInterface|FilterControllerEvent */
+    /**
+     * @var MockInterface|FilterControllerEvent
+     */
     private $filterControllerEvent;
 
     public function setUp()
     {
-        $this->filterControllerEvent = \Mockery::mock(FilterControllerEvent::class);
+        $this->filterControllerEvent = Mockery::mock(FilterControllerEvent::class);
     }
 
     public function testOnKernelControllerWithRequestQueryMapperValidationThrowsExceptionWithCamelCasePathConverter()
     {
-        $exceptionThrowed = false;
         try {
             $this
                 ->createRestListener(new CamelCaseToSnakeCaseConverter())
                 ->onKernelController($this->filterControllerEvent)
             ;
+            $this->setExpectedException(ApiException::class);
         } catch (ApiException $apiException) {
-            $exceptionThrowed = true;
             $this->assertEquals(
                 [
                     'first_name' => ['firstName message'],
@@ -65,17 +68,14 @@ class RestListenerPathConverterTest extends \PHPUnit_Framework_TestCase
                 $apiException->getViolations()
             );
         }
-
-        $this->assertTrue($exceptionThrowed);
     }
 
     public function testOnKernelControllerWithRequestQueryMapperValidationThrowsExceptionWithNoOpConverter()
     {
-        $exceptionThrowed = false;
         try {
             $this->createRestListener(new NoOpConverter())->onKernelController($this->filterControllerEvent);
+            $this->setExpectedException(ApiException::class);
         } catch (ApiException $apiException) {
-            $exceptionThrowed = true;
             $this->assertEquals(
                 [
                     'firstName' => ['firstName message'],
@@ -92,11 +92,11 @@ class RestListenerPathConverterTest extends \PHPUnit_Framework_TestCase
                 $apiException->getViolations()
             );
         }
-
-        $this->assertTrue($exceptionThrowed);
     }
 
     /**
+     * @param PropertyPathConverterInterface $pathConverter
+     *
      * @return RestListener
      */
     private function createRestListener(PropertyPathConverterInterface $pathConverter)
@@ -114,7 +114,7 @@ class RestListenerPathConverterTest extends \PHPUnit_Framework_TestCase
 
         $queryParameterBag->add($entity);
 
-        $request = \Mockery::mock(Request::class);
+        $request = Mockery::mock(Request::class);
         $request->shouldReceive('getContent')->andReturn('{}');
         $request->attributes = $parameterBag;
         $request->query = $queryParameterBag;
@@ -122,9 +122,9 @@ class RestListenerPathConverterTest extends \PHPUnit_Framework_TestCase
         $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
 
         if (interface_exists('Symfony\Component\Validator\Validator\ValidatorInterface')) {
-            $validator = \Mockery::mock(ValidatorInterface::class);
+            $validator = Mockery::mock(ValidatorInterface::class);
         } else {
-            $validator = \Mockery::mock(LegacyValidatorInterface::class);
+            $validator = Mockery::mock(LegacyValidatorInterface::class);
         }
 
         $violationList = new ConstraintViolationList([
@@ -134,14 +134,14 @@ class RestListenerPathConverterTest extends \PHPUnit_Framework_TestCase
 
         $validator->shouldReceive('validate')->andReturn($violationList);
 
-        $formatDetector = \Mockery::mock(FormatDetector::class);
+        $formatDetector = Mockery::mock(FormatDetector::class);
         $formatDetector->shouldReceive('getRequestFormat')->andReturn('json');
 
-        $requestMapper = \Mockery::mock(NameAwareDenormalizerInterface::class);
+        $requestMapper = Mockery::mock(NameAwareDenormalizerInterface::class);
         $requestMapper->shouldReceive('mapToEntity')->andReturn([]);
         $requestMapper->shouldReceive('getName')->andReturn('name');
 
-        $container = \Mockery::mock(ContainerInterface::class);
+        $container = Mockery::mock(ContainerInterface::class);
         $container->shouldReceive('get')->andReturn($requestMapper);
 
         $api = new RestApi($container, new NullLogger());
@@ -162,16 +162,17 @@ class RestListenerPathConverterTest extends \PHPUnit_Framework_TestCase
         $apiManager->addApiByKey($api, 'api');
         $apiManager->addDecoder(new Json(), 'json');
 
-        $parameterToEntityMapBuilder = \Mockery::mock(ParameterToEntityMapBuilder::class);
+        $parameterToEntityMapBuilder = Mockery::mock(ParameterToEntityMapBuilder::class);
         $parameterToEntityMapBuilder->shouldReceive('buildParameterToEntityMap')->andReturn([]);
 
         return new RestListener(
             $apiManager,
-            \Mockery::mock(ContextAwareNormalizerFactory::class),
+            Mockery::mock(ContextAwareNormalizerFactory::class),
             new NullLogger(),
             $parameterToEntityMapBuilder,
             new RequestLogger(new NullLogger()),
-            new ExceptionLogger()
+            new ExceptionLogger(),
+            []
         );
     }
 }
