@@ -7,6 +7,7 @@ use Paysera\Bundle\RestBundle\Exception\ApiException;
 use Paysera\Bundle\RestBundle\Listener\RestListener;
 use Paysera\Bundle\RestBundle\Normalizer\NameAwareDenormalizerInterface;
 use Paysera\Bundle\RestBundle\RestApi;
+use Paysera\Bundle\RestBundle\Service\ExceptionLogger;
 use Paysera\Bundle\RestBundle\Service\ParameterToEntityMapBuilder;
 use Paysera\Bundle\RestBundle\Service\RequestLogger;
 use Paysera\Component\Serializer\Exception\EncodingException;
@@ -18,6 +19,8 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
+use Symfony\Component\HttpKernel\Event\GetResponseForControllerResultEvent;
+use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\ValidatorInterface as LegacyValidatorInterface;
@@ -48,6 +51,9 @@ class RestListenerTest extends \PHPUnit_Framework_TestCase
     /** @var \Mockery\MockInterface|FilterControllerEvent */
     private $filterControllerEvent;
 
+    /** @var  ExceptionLogger */
+    private $exceptionLogger;
+
     private $storedLoggerMessages = [];
 
     private $storedContext = [];
@@ -66,6 +72,8 @@ class RestListenerTest extends \PHPUnit_Framework_TestCase
         $this->requestLogger = \Mockery::mock(RequestLogger::class);
 
         $this->filterControllerEvent = \Mockery::mock(FilterControllerEvent::class);
+
+        $this->exceptionLogger = \Mockery::mock(ExceptionLogger::class);
     }
 
     public function testOnKernelControllerNoMappersOnlyParameterToEntityMap()
@@ -475,6 +483,34 @@ class RestListenerTest extends \PHPUnit_Framework_TestCase
         $this->assertNull($parameterBag->get($name));
     }
 
+    public function testOnKernelViewResponseHasXFrameOptionsHeader()
+    {
+        $restListener = $this->createRestListener();
+
+        $this->apiManager->shouldReceive('getApiKeyForRequest');
+        $this->apiManager->shouldReceive('getLogger');
+        $this->apiManager->shouldReceive('isRestRequest')->andReturn(true);
+        $this->apiManager->shouldReceive('getCacheStrategy');
+
+        $httpKernelMock = \Mockery::mock(HttpKernelInterface::class);
+        $requestMock = \Mockery::mock(Request::class);
+
+        $event = new GetResponseForControllerResultEvent(
+            $httpKernelMock,
+            $requestMock,
+            null,
+            null
+        );
+
+        $restListener->onKernelView($event);
+
+        $responseHeaders = $event->getResponse()->headers;
+        $headerName = 'x-frame-options';
+
+        $this->assertTrue($responseHeaders->has($headerName));
+        $this->assertEquals('DENY', $responseHeaders->get($headerName));
+    }
+
     private function storeLoggerMessage()
     {
         return function($value, $context = null) {
@@ -493,7 +529,8 @@ class RestListenerTest extends \PHPUnit_Framework_TestCase
             $this->normalizerFactory,
             $this->logger,
             $this->parameterToEntityMapBuilder,
-            $this->requestLogger
+            $this->requestLogger,
+            $this->exceptionLogger
         );
     }
 

@@ -3,6 +3,7 @@
 namespace Paysera\Bundle\RestBundle\Listener;
 
 use Paysera\Bundle\RestBundle\Cache\ResponseAwareCacheStrategy;
+use Paysera\Bundle\RestBundle\Service\ExceptionLogger;
 use Paysera\Bundle\RestBundle\Service\ParameterToEntityMapBuilder;
 use Paysera\Component\Serializer\Entity\NormalizationContext;
 use Paysera\Component\Serializer\Factory\ContextAwareNormalizerFactory;
@@ -28,6 +29,7 @@ class RestListener
     private $normalizerFactory;
     private $apiManager;
     private $parameterToEntityMapBuilder;
+    private $exceptionLogger;
 
     /**
      * @var LoggerInterface[]
@@ -39,13 +41,15 @@ class RestListener
         ContextAwareNormalizerFactory $normalizerFactory,
         LoggerInterface $logger,
         ParameterToEntityMapBuilder $parameterToEntityMapBuilder,
-        RequestLogger $requestLogger
+        RequestLogger $requestLogger,
+        ExceptionLogger $exceptionLogger
     ) {
         $this->apiManager = $apiManager;
         $this->normalizerFactory = $normalizerFactory;
         $this->logger = $logger;
         $this->parameterToEntityMapBuilder = $parameterToEntityMapBuilder;
         $this->requestLogger = $requestLogger;
+        $this->exceptionLogger = $exceptionLogger;
 
         $this->loggersCache = array();
     }
@@ -203,6 +207,7 @@ class RestListener
         $response->setContent($responseContent);
 
         $response->setEtag($etag === null ? hash('sha256', $responseContent) : $etag);
+        $response->headers->set('X-Frame-Options', 'DENY');
 
         $event->setResponse($response);
     }
@@ -225,14 +230,9 @@ class RestListener
         if ($response !== null) {
             $event->setResponse($response);
             $logger->debug('Setting error response', array($response->getContent()));
+            $exception = $event->getException();
 
-            if ($response->getStatusCode() === 500) {
-                $logger->error($event->getException()->getMessage(), ['exception' => $event->getException()]);
-            } elseif ($response->getStatusCode() === 404) {
-                $logger->notice($event->getException()->getMessage(), ['exception' => $event->getException()]);
-            } else {
-                $logger->warning($event->getException()->getMessage(), ['exception' => $event->getException()]);
-            }
+            $this->exceptionLogger->log($logger, $response, $exception);
         }
     }
 
@@ -257,9 +257,15 @@ class RestListener
                 }
             }
         } catch (InvalidDataException $exception) {
+            $context = [];
+
+            if ($exception->getProperties() !== null) {
+                $context = $exception->getProperties();
+            }
+
             $this->getLogger($request)->notice(
                 'Invalid data exception caught: ' . $exception,
-                count($exception->getProperties()) > 0 ? $exception->getProperties() : array()
+                $context
             );
             $this->handleException($exception);
         }
