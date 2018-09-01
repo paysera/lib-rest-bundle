@@ -22,6 +22,7 @@ use Paysera\Component\Serializer\Factory\ContextAwareNormalizerFactory;
 use Paysera\Component\Serializer\Normalizer\ArrayNormalizer;
 use Paysera\Component\Serializer\Normalizer\ViolationNormalizer;
 use Paysera\Component\Serializer\Validation\PropertyPathConverterInterface;
+use PHPUnit_Framework_TestCase;
 use Psr\Log\NullLogger;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\ParameterBag;
@@ -31,7 +32,7 @@ use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-class RestListenerPathConverterTest extends \PHPUnit_Framework_TestCase
+class RestListenerPathConverterTest extends PHPUnit_Framework_TestCase
 {
     /**
      * @var MockInterface|FilterControllerEvent
@@ -45,13 +46,14 @@ class RestListenerPathConverterTest extends \PHPUnit_Framework_TestCase
 
     public function testOnKernelControllerWithRequestQueryMapperValidationThrowsExceptionWithCamelCasePathConverter()
     {
+        $exceptionThrown = false;
         try {
             $this
                 ->createRestListener(new CamelCaseToSnakeCaseConverter())
                 ->onKernelController($this->filterControllerEvent)
             ;
-            $this->setExpectedException(ApiException::class);
         } catch (ApiException $apiException) {
+            $exceptionThrown = true;
             $this->assertEquals(
                 [
                     'first_name' => ['firstName message'],
@@ -68,14 +70,18 @@ class RestListenerPathConverterTest extends \PHPUnit_Framework_TestCase
                 $apiException->getViolations()
             );
         }
+
+        $this->assertTrue($exceptionThrown);
     }
 
     public function testOnKernelControllerWithRequestQueryMapperValidationThrowsExceptionWithNoOpConverter()
     {
+        $exceptionThrown = false;
         try {
             $this->createRestListener(new NoOpConverter())->onKernelController($this->filterControllerEvent);
             $this->setExpectedException(ApiException::class);
         } catch (ApiException $apiException) {
+            $exceptionThrown = true;
             $this->assertEquals(
                 [
                     'firstName' => ['firstName message'],
@@ -92,6 +98,8 @@ class RestListenerPathConverterTest extends \PHPUnit_Framework_TestCase
                 $apiException->getViolations()
             );
         }
+
+        $this->assertTrue($exceptionThrown);
     }
 
     /**

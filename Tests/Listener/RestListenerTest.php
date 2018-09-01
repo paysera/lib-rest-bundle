@@ -16,6 +16,7 @@ use Paysera\Component\Serializer\Exception\InvalidDataException;
 use Paysera\Component\Serializer\Factory\ContextAwareNormalizerFactory;
 use Paysera\Component\Serializer\Validation\PropertiesAwareValidator;
 use Paysera\Component\Serializer\Validation\PropertyPathConverterInterface;
+use PHPUnit_Framework_TestCase;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
@@ -32,7 +33,7 @@ use Paysera\Component\Serializer\Entity\Violation;
  * These tests use heavy object mocking, however it makes sure that as much code as possible is executed
  * These tests are used for refactoring RestListener
  */
-class RestListenerTest extends \PHPUnit_Framework_TestCase
+class RestListenerTest extends PHPUnit_Framework_TestCase
 {
     /** @var \Mockery\MockInterface|ApiManager */
     private $apiManager;
