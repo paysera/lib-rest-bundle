@@ -57,24 +57,29 @@ class RestListenerLocaleTest extends PHPUnit_Framework_TestCase
     public function dataProviderForTestLocaleIsBeingSet()
     {
         return [
-            'select requested locale' => [
+            'select requested locale from the provided configuration' => [
                 ['lt', 'ru'],
                 'lt',
-                'lt'
+                'lt',
             ],
-            'select locale with the highest weight' => [
+            'if no configuration is provided, don\'t change the locale' => [
                 [],
-                'zh',
-                'zh, en-us; q=0.8, en; q=0.6',
+                'en',
+                'fr-CH, fr;q=0.9, lt;q=0.8, de;q=0.7',
             ],
-            'select locale from the defined locale array' => [
+            'select locale from the defined locale configuration despite it having lowest weight' => [
                 ['en'],
                 'en',
                 'zh, en-us; q=0.8, en; q=0.6',
             ],
-            'fallback to the default locale' => [
+            'fallback to the default locale if neither configuration nor accept language header is provided' => [
                 [],
                 'en',
+            ],
+            'fallback to the default locale if requested locale is not configured' => [
+                ['ru', 'zh'],
+                'en',
+                'fr-CH, fr;q=0.9, lt;q=0.8, de;q=0.7',
             ],
         ];
     }

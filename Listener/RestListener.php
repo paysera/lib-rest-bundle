@@ -70,7 +70,11 @@ class RestListener
             } else {
                 $preferredLanguage = $request->getPreferredLanguage($this->locales);
 
-                if ($preferredLanguage !== null) {
+                if (
+                    $preferredLanguage !== null
+                    && count($this->locales) > 0
+                    && in_array($preferredLanguage, $request->getLanguages(), true)
+                ) {
                     $request->setLocale($preferredLanguage);
                 }
             }
