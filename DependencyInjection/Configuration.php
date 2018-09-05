@@ -26,7 +26,8 @@ class Configuration implements ConfigurationInterface
                     ->defaultNull()
                 ->end()
                 ->arrayNode('locales')
-                    ->prototype('scalar')
+                    ->prototype('scalar')->end()
+                    ->defaultValue([])
                 ->end()
             ->end()
         ;

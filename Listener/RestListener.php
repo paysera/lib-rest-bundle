@@ -68,9 +68,11 @@ class RestListener
             if ($locale !== null) {
                 $request->setLocale($locale);
             } else {
-                $request->setLocale(
-                    $request->getPreferredLanguage($this->locales)
-                );
+                $preferredLanguage = $request->getPreferredLanguage($this->locales);
+
+                if ($preferredLanguage !== null) {
+                    $request->setLocale($preferredLanguage);
+                }
             }
 
             $request->query->remove('locale');
