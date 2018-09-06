@@ -68,9 +68,9 @@ class RestListenerLocaleTest extends PHPUnit_Framework_TestCase
                 'fr-CH, fr;q=0.9, lt;q=0.8, de;q=0.7',
             ],
             'select locale from the defined locale configuration despite it having lowest weight' => [
-                ['en'],
-                'en',
-                'zh, en-us; q=0.8, en; q=0.6',
+                ['de'],
+                'de',
+                'fr-CH, fr;q=0.9, en;q=0.8, de;q=0.7',
             ],
             'fallback to the default locale if neither configuration nor accept language header is provided' => [
                 [],
