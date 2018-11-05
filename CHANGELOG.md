@@ -1,5 +1,9 @@
 # Change Log
 
+## 4.2.2 - 2018-11-05
+### Changed
+- `\Paysera\Bundle\RestBundle\Listener\RestListener::onKernelException` now logs exceptions more precisely.
+
 ## 4.2.1
 ### Changed
 - `\Paysera\Bundle\RestBundle\RestApi::getValidationGroups()` no longer returns `null` if `\Paysera\Bundle\RestBundle\RestApi::$globalValidationGroups` is empty.
