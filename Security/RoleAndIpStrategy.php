@@ -52,8 +52,8 @@ class RoleAndIpStrategy implements SecurityStrategyInterface
             return false;
         }
 
-        $availableRoles = array_map(function ($role) {
-            return (string)$role;
+        $availableRoles = array_map(function (Role $role) {
+            return $role->getRole();
         }, $this->roleHierarchy->getReachableRoles($token->getRoles()));
 
         $availableRoles = array_unique($availableRoles);
