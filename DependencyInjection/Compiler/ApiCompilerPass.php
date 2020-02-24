@@ -9,35 +9,58 @@ use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 
 class ApiCompilerPass implements CompilerPassInterface
 {
-
-    /**
-     * Run the Compiler and process all Passes.
-     *
-     * @param ContainerBuilder $container
-     */
     public function process(ContainerBuilder $container)
     {
-        $this->processTags($container, 'paysera_rest.encoder', 'format', 'addEncoder');
-        $this->processTags($container, 'paysera_rest.decoder', 'format', 'addDecoder');
-        $this->processTags($container, 'paysera_rest.api', 'uri_pattern', 'addApiByUriPattern', true);
-        $this->processTags($container, 'paysera_rest.api', 'api_key', 'addApiByKey', true);
+        $this->processTags(
+            $container,
+            'paysera_rest.api_manager',
+            'paysera_rest.encoder',
+            'format',
+            'addEncoder',
+            'paysera_rest.service.request_api_resolver'
+        );
+        $this->processTags(
+            $container,
+            'paysera_rest.api_manager',
+            'paysera_rest.decoder',
+            'format',
+            'addDecoder',
+            'paysera_rest.service.request_api_resolver'
+        );
+        $this->processTags(
+            $container,
+            'paysera_rest.service.rest_api_registry',
+            'paysera_rest.api',
+            'uri_pattern',
+            'addApiByUriPattern',
+            'paysera_rest.service.request_api_resolver',
+            true
+        );
+        $this->processTags(
+            $container,
+            'paysera_rest.service.rest_api_registry',
+            'paysera_rest.api',
+            'api_key',
+            'addApiByKey',
+            'paysera_rest.service.request_api_resolver',
+            true
+        );
     }
 
-    /**
-     * @param ContainerBuilder $container
-     * @param string           $tag
-     * @param string           $attributeName
-     * @param string           $methodName
-     * @param boolean          $ignoreOnNoAttribute
-     *
-     * @throws InvalidConfigurationException
-     */
-    protected function processTags($container, $tag, $attributeName, $methodName, $ignoreOnNoAttribute = false)
-    {
-        if (!$container->hasDefinition('paysera_rest.api_manager')) {
+    protected function processTags(
+        ContainerBuilder $container,
+        string $serviceId,
+        string $tag,
+        string $attributeName,
+        string $methodName,
+        string $resolverId,
+        bool $ignoreOnNoAttribute = false
+    ) {
+        if (!$container->hasDefinition($serviceId) || !$container->hasDefinition($resolverId)) {
             return;
         }
-        $definition = $container->getDefinition('paysera_rest.api_manager');
+        $uriPatternRegexps = [];
+        $definition = $container->getDefinition($serviceId);
         foreach ($container->findTaggedServiceIds($tag) as $id => $tags) {
             if (count($tags) > 1) {
                 $exception = new InvalidConfigurationException(
@@ -57,8 +80,17 @@ class ApiCompilerPass implements CompilerPassInterface
                 }
             } else {
                 $definition->addMethodCall($methodName, array(new Reference($id), $attributes[$attributeName]));
+                if (!isset($attributes['api_key']) && isset($attributes['uri_pattern'])) {
+                    $uriPatternRegexps[] = '(' . str_replace('#', '', $attributes['uri_pattern']) . ')';
+                }
             }
         }
+        if (count($uriPatternRegexps) > 0) {
+            $apiResolverDefinition = $container->getDefinition($resolverId);
+            $apiResolverDefinition->addMethodCall(
+                'setGlobalApiUriPattern',
+                ['#' . implode('|', $uriPatternRegexps) . '#']
+            );
+        }
     }
-
 }

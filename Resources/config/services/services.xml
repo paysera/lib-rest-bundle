@@ -10,13 +10,14 @@
             <argument type="service" id="logger"/>
         </service>
 
-        <service id="paysera_rest.api_manager" class="Paysera\Bundle\RestBundle\ApiManager">
+        <service id="paysera_rest.api_manager" class="Paysera\Bundle\RestBundle\ApiManager" lazy="true">
             <tag name="monolog.logger" channel="paysera_rest.api_manager" />
 
             <argument type="service" id="paysera_rest.format_detector"/>
             <argument type="service" id="logger"/>
             <argument type="service" id="validator"/>
             <argument type="service" id="paysera_rest.normalizer.error"/>
+            <argument type="service" id="paysera_rest.service.request_api_resolver" />
 
             <call method="setErrorConfig">
                 <argument type="service" id="paysera_rest.error_config"/>
@@ -87,6 +88,7 @@
             <argument type="service" id="paysera_rest.service.parameter_to_entity_map_builder"/>
             <argument type="service" id="paysera_rest.service.request_logger"/>
             <argument type="service" id="paysera_rest.service.exception_logger"/>
+            <argument type="service" id="paysera_rest.service.request_api_resolver" />
             <argument>%paysera_rest.locales%</argument>
         </service>
 
@@ -175,5 +177,19 @@
             <argument type="service" id="security.token_storage" />
             <argument type="service" id="logger" />
         </service>
+
+        <service id="paysera_rest.service.rest_api_registry"
+                 class="Paysera\Bundle\RestBundle\Service\RestApiRegistry"
+                 lazy="true" />
+
+        <service id="paysera_rest.service.request_api_key_resolver"
+                 class="Paysera\Bundle\RestBundle\Service\RequestApiKeyResolver" />
+
+        <service id="paysera_rest.service.request_api_resolver"
+                 class="Paysera\Bundle\RestBundle\Service\RequestApiResolver">
+            <argument type="service" id="paysera_rest.service.rest_api_registry" />
+            <argument type="service" id="paysera_rest.service.request_api_key_resolver" />
+        </service>
+
     </services>
 </container>

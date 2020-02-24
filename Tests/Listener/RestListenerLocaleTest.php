@@ -3,6 +3,8 @@
 namespace Paysera\Bundle\RestBundle\Tests;
 
 use Mockery;
+use Paysera\Bundle\RestBundle\RestApi;
+use Paysera\Bundle\RestBundle\Service\RequestApiResolver;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 use Mockery\MockInterface;
@@ -92,7 +94,10 @@ class RestListenerLocaleTest extends TestCase
     private function createRestListener(array $locales)
     {
         $apiManager = Mockery::mock(ApiManager::class);
-        $apiManager->shouldReceive('isRestRequest')->andReturn(true);
+        $restApi = Mockery::mock(RestApi::class);
+
+        $requestApiResolver = Mockery::mock(RequestApiResolver::class);
+        $requestApiResolver->shouldReceive('getApiForRequest')->andReturn($restApi);
 
         return new RestListener(
             $apiManager,
@@ -101,6 +106,7 @@ class RestListenerLocaleTest extends TestCase
             Mockery::mock(ParameterToEntityMapBuilder::class),
             new RequestLogger(new NullLogger()),
             new ExceptionLogger(),
+            $requestApiResolver,
             $locales
         );
     }

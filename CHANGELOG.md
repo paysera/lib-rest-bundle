@@ -1,5 +1,15 @@
 # Change Log
 
+## 5.0.0
+### Changed
+- `ApiManager` is now lazy-loaded and REST related request checking is moved to other services
+### Removed
+- Removed `ApiManager::addApiByUriPattern`, `ApiManager::addApiByKey` methods. Now compiler pass uses `RestApiRegistry::addApiByKey`,
+`RestApiRegistry::addApiByUriPattern` methods for registering API's.
+- Removed `ApiManager::getApiKeyForRequest`, now `RequestApiKeyResolver` is responsible for providing api keys.
+- Removed `ApiManager::getApiForRequest`. Now `RequestApiResolver` is responsible for providing API's based on request.
+- Removed `ApiManager::isRestRequest`, instead `RestListener` uses private `RestListener::isRestRequest` method.
+
 ## 4.4.1
 ### Fixed
 Made service `paysera_rest.service.property_path_converter.camel_case_to_snake_case` public as it is being retrieved directly from the container.

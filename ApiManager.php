@@ -8,6 +8,7 @@ use Paysera\Bundle\RestBundle\Normalizer\NameAwareDenormalizerInterface;
 use Paysera\Bundle\RestBundle\Resolver\AttributeResolverInterface;
 use Paysera\Bundle\RestBundle\Security\SecurityStrategyInterface;
 use Paysera\Bundle\RestBundle\Service\PropertyPathConverter\PathConverter;
+use Paysera\Bundle\RestBundle\Service\RequestApiResolver;
 use Paysera\Component\Serializer\Exception\InvalidDataException;
 use Paysera\Component\Serializer\Normalizer\NormalizerInterface;
 use Paysera\Component\Serializer\Validation\PropertiesAwareValidator;
@@ -39,16 +40,6 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class ApiManager
 {
     /**
-     * @var RestApi[]
-     */
-    private $apiByUriPattern;
-
-    /**
-     * @var RestApi[]
-     */
-    private $apiByKey;
-
-    /**
      * @var EncoderInterface[]
      */
     private $encoders;
@@ -64,12 +55,9 @@ class ApiManager
 
     private $errorNormalizer;
 
-    private $logger;
+    private $requestApiResolver;
 
-    /**
-     * @var string
-     */
-    private $routingAttribute;
+    private $logger;
 
     /**
      * @var PropertyPathConverterInterface|null
@@ -78,53 +66,22 @@ class ApiManager
 
     private $formatDetector;
 
-    /**
-     * @param FormatDetector     $formatDetector
-     * @param LoggerInterface    $logger
-     * @param ValidatorInterface $validator
-     * @param NormalizerInterface $errorNormalizer
-     * @param string             $routingAttribute
-     */
     public function __construct(
         FormatDetector $formatDetector,
         LoggerInterface $logger,
         ValidatorInterface $validator,
         NormalizerInterface $errorNormalizer,
-        $routingAttribute = 'api_key'
+        RequestApiResolver $requestApiResolver
     ) {
-        $this->logger = $logger;
         $this->formatDetector = $formatDetector;
+        $this->logger = $logger;
         $this->validator = $validator;
         $this->errorNormalizer = $errorNormalizer;
-        $this->routingAttribute = $routingAttribute;
+        $this->requestApiResolver = $requestApiResolver;
         $this->errorConfig = new ErrorConfig();
 
-        $this->apiByUriPattern = [];
-        $this->apiByKey = [];
         $this->encoders = [];
         $this->decoders = [];
-    }
-
-    /**
-     * Adds API to manager. Should be called from configuration or dependency injection compiler
-     *
-     * @param RestApi $restApi
-     * @param string  $uriPattern
-     */
-    public function addApiByUriPattern(RestApi $restApi, $uriPattern)
-    {
-        $this->apiByUriPattern[$uriPattern] = $restApi;
-    }
-
-    /**
-     * Adds API to manager. Should be called from configuration or dependency injection compiler
-     *
-     * @param RestApi $restApi
-     * @param string  $apiKey
-     */
-    public function addApiByKey(RestApi $restApi, $apiKey)
-    {
-        $this->apiByKey[$apiKey] = $restApi;
     }
 
     /**
@@ -173,12 +130,12 @@ class ApiManager
     public function getResponseForException(Request $request, Exception $exception)
     {
         try {
-            $api = $this->getApiForRequest($request);
-        } catch (RuntimeException $e) {
+            $api = $this->requestApiResolver->getApiForRequest($request);
+        } catch (RuntimeException $runtimeException) {
             return new Response('', 500);
         }
 
-        if ($api) {
+        if ($api !== null) {
             $error = $this->createErrorFromException($exception);
             $this->fillErrorDefaults($error, $api);
             try {
@@ -195,6 +152,7 @@ class ApiManager
             }
             return new Response($result, $error->getStatusCode(), $headers);
         }
+
         return null;
     }
 
@@ -207,10 +165,11 @@ class ApiManager
      */
     public function getRequestMapper(Request $request)
     {
-        $api = $this->getApiForRequest($request);
-        if ($api) {
+        $api = $this->requestApiResolver->getApiForRequest($request);
+        if ($api !== null) {
             return $api->getRequestMapper($request->attributes->get('_controller'));
         }
+
         return null;
     }
 
@@ -223,27 +182,28 @@ class ApiManager
      */
     public function getRequestQueryMapper(Request $request)
     {
-        $api = $this->getApiForRequest($request);
-        if ($api) {
+        $api = $this->requestApiResolver->getApiForRequest($request);
+        if ($api !== null) {
             return $api->getRequestQueryMapper($request->attributes->get('_controller'));
         }
+
         return null;
     }
 
     /**
      * Returns validation group for this request
-     * 
+     *
      * @param Request $request
-     * 
+     *
      * @return array
      */
     public function getValidationGroups(Request $request)
     {
-        $api = $this->getApiForRequest($request);
-        if ($api) {
+        $api = $this->requestApiResolver->getApiForRequest($request);
+        if ($api !== null) {
             return $api->getValidationGroups($request->attributes->get('_controller'));
         }
-        
+
         return null;
     }
     /**
@@ -253,8 +213,8 @@ class ApiManager
      */
     public function createPropertiesValidator(Request $request)
     {
-        $api = $this->getApiForRequest($request);
-        if ($api) {
+        $api = $this->requestApiResolver->getApiForRequest($request);
+        if ($api !== null) {
             $pathConverters = $api->getPropertyPathConverters($request->attributes->get('_controller'));
             if ($this->propertyPathConverter !== null) {
                 $pathConverters[] = $this->propertyPathConverter;
@@ -280,10 +240,11 @@ class ApiManager
      */
     public function getRequestLoggingParts(Request $request)
     {
-        $api = $this->getApiForRequest($request);
-        if ($api) {
+        $api = $this->requestApiResolver->getApiForRequest($request);
+        if ($api !== null) {
             return $api->getRequestLoggingParts($request->attributes->get('_controller'));
         }
+
         return null;
     }
 
@@ -298,10 +259,11 @@ class ApiManager
     {
         $requestAttrResolvers = array();
 
-        $api = $this->getApiForRequest($request);
-        if ($api) {
+        $api = $this->requestApiResolver->getApiForRequest($request);
+        if ($api !== null) {
             $requestAttrResolvers  = $api->getRequestAttributeResolvers($request->attributes->get('_controller'));
         }
+
         return $requestAttrResolvers;
     }
 
@@ -315,10 +277,11 @@ class ApiManager
      */
     public function getResponseMapper(Request $request, array $options = array())
     {
-        $api = $this->getApiForRequest($request);
-        if ($api) {
+        $api = $this->requestApiResolver->getApiForRequest($request);
+        if ($api !== null) {
             return $api->getResponseMapper($request->attributes->get('_controller'), $options);
         }
+
         return null;
     }
 
@@ -332,10 +295,11 @@ class ApiManager
      */
     public function getCacheStrategy(Request $request, array $options = array())
     {
-        $api = $this->getApiForRequest($request);
-        if ($api) {
+        $api = $this->requestApiResolver->getApiForRequest($request);
+        if ($api !== null) {
             return $api->getCacheStrategy($request->attributes->get('_controller'), $options);
         }
+
         return null;
     }
 
@@ -349,10 +313,11 @@ class ApiManager
      */
     public function getEncoder(Request $request, array $options = array())
     {
-        $api = $this->getApiForRequest($request);
-        if ($api) {
+        $api = $this->requestApiResolver->getApiForRequest($request);
+        if ($api !== null) {
             return $this->getEncoderForApi($request, $api, $options);
         }
+
         return null;
     }
 
@@ -365,10 +330,11 @@ class ApiManager
      */
     public function getDecoder(Request $request)
     {
-        $api = $this->getApiForRequest($request);
-        if ($api) {
+        $api = $this->requestApiResolver->getApiForRequest($request);
+        if ($api !== null) {
             return $this->getDecoderForApi($request, $api);
         }
+
         return null;
     }
 
@@ -381,16 +347,17 @@ class ApiManager
      */
     public function getSecurityStrategy(Request $request)
     {
-        $api = $this->getApiForRequest($request);
-        if ($api) {
+        $api = $this->requestApiResolver->getApiForRequest($request);
+        if ($api !== null) {
             return $api->getSecurityStrategy();
         }
+
         return null;
     }
 
     /**
      * @param PropertyPathConverterInterface|null $propertyPathConverter
-     * 
+     *
      * @return $this
      */
     public function setPropertyPathConverter($propertyPathConverter)
@@ -402,40 +369,9 @@ class ApiManager
 
     public function getLogger(Request $request)
     {
-        $api = $this->getApiForRequest($request);
-        if ($api) {
+        $api = $this->requestApiResolver->getApiForRequest($request);
+        if ($api !== null) {
             return $api->getLogger();
-        }
-        return null;
-    }
-
-    public function getApiKeyForRequest(Request $request)
-    {
-        return $request->attributes->get($this->routingAttribute);
-    }
-
-    /**
-     * Finds API for this request. Returns null if none found
-     *
-     * @param Request $request
-     *
-     * @throws RuntimeException
-     * @return RestApi|null
-     */
-    protected function getApiForRequest(Request $request)
-    {
-        $apiKey = $this->getApiKeyForRequest($request);
-        if ($apiKey !== null) {
-            if (!isset($this->apiByKey[$apiKey])) {
-                throw new RuntimeException('Api not registered with such key: ' . $apiKey);
-            }
-            return $this->apiByKey[$apiKey];
-        }
-
-        foreach ($this->apiByUriPattern as $uriPattern => $api) {
-            if (preg_match($uriPattern, $request->getPathInfo())) {
-                return $api;
-            }
         }
 
         return null;
@@ -596,14 +532,5 @@ class ApiManager
             }
         }
         return $config;
-    }
-
-    /**
-     * @param Request $request
-     * @return bool
-     */
-    public function isRestRequest(Request $request)
-    {
-        return $this->getApiForRequest($request) !== null;
     }
 }

@@ -6,6 +6,7 @@ use Exception;
 use Paysera\Bundle\RestBundle\Cache\ResponseAwareCacheStrategy;
 use Paysera\Bundle\RestBundle\Service\ExceptionLogger;
 use Paysera\Bundle\RestBundle\Service\ParameterToEntityMapBuilder;
+use Paysera\Bundle\RestBundle\Service\RequestApiResolver;
 use Paysera\Component\Serializer\Entity\NormalizationContext;
 use Paysera\Component\Serializer\Factory\ContextAwareNormalizerFactory;
 use Paysera\Component\Serializer\Normalizer\ContextAwareNormalizerInterface;
@@ -37,6 +38,8 @@ class RestListener
      */
     private $loggersCache;
 
+    private $requestApiResolver;
+
     private $locales;
 
     public function __construct(
@@ -46,6 +49,7 @@ class RestListener
         ParameterToEntityMapBuilder $parameterToEntityMapBuilder,
         RequestLogger $requestLogger,
         ExceptionLogger $exceptionLogger,
+        RequestApiResolver $requestApiResolver,
         array $locales
     ) {
         $this->apiManager = $apiManager;
@@ -54,6 +58,7 @@ class RestListener
         $this->parameterToEntityMapBuilder = $parameterToEntityMapBuilder;
         $this->requestLogger = $requestLogger;
         $this->exceptionLogger = $exceptionLogger;
+        $this->requestApiResolver = $requestApiResolver;
         $this->locales = $locales;
 
         $this->loggersCache = array();
@@ -63,7 +68,7 @@ class RestListener
     {
         $request = $event->getRequest();
 
-        if ($this->apiManager->isRestRequest($request)) {
+        if ($this->isRestRequest($request)) {
             $locale = $request->query->get('locale');
 
             if ($locale !== null) {
@@ -101,7 +106,8 @@ class RestListener
 
         $logger->debug('Handling kernel.controller', array($event->getRequest()->attributes->get('_controller')));
 
-        if ($this->apiManager->isRestRequest($request) && $parts = $this->apiManager->getRequestLoggingParts($request)) {
+        $parts = $this->apiManager->getRequestLoggingParts($request);
+        if ($parts !== null) {
             $this->requestLogger->log($request, $parts);
         }
 
@@ -135,7 +141,7 @@ class RestListener
 
         $logger->debug('Handling kernel.view', array($event));
 
-        if (!$this->apiManager->isRestRequest($request)) {
+        if (!$this->isRestRequest($request)) {
             $logger->debug('Not rest request');
 
             return;
@@ -375,14 +381,18 @@ class RestListener
         );
     }
 
+    private function isRestRequest(Request $request): bool
+    {
+        return $this->requestApiResolver->getApiForRequest($request) !== null;
+    }
+
     /**
      * @param Request $request
      * @return LoggerInterface
      */
     private function getLogger(Request $request)
     {
-        $apiKey = $this->apiManager->getApiKeyForRequest($request);
-
+        $apiKey = $this->requestApiResolver->getApiKeyForRequest($request);
         if (isset($this->loggersCache[$apiKey])) {
             return $this->loggersCache[$apiKey];
         }

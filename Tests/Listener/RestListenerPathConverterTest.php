@@ -13,6 +13,7 @@ use Paysera\Bundle\RestBundle\RestApi;
 use Paysera\Bundle\RestBundle\Service\ExceptionLogger;
 use Paysera\Bundle\RestBundle\Service\FormatDetector;
 use Paysera\Bundle\RestBundle\Service\ParameterToEntityMapBuilder;
+use Paysera\Bundle\RestBundle\Service\RequestApiResolver;
 use Paysera\Bundle\RestBundle\Service\RequestLogger;
 use Paysera\Component\Serializer\Converter\CamelCaseToSnakeCaseConverter;
 use Paysera\Component\Serializer\Converter\NoOpConverter;
@@ -153,6 +154,10 @@ class RestListenerPathConverterTest extends TestCase
         $api->addRequestMapper('api', 'controller', 'property');
         $api->setPropertyPathConverter($pathConverter);
 
+        $requestApiResolver = Mockery::mock(RequestApiResolver::class);
+        $requestApiResolver->shouldReceive('getApiForRequest')->andReturn($api);
+        $requestApiResolver->shouldReceive('getApiKeyForRequest')->andReturn($parameterBag->get('api_key'));
+
         $apiManager = new ApiManager(
             $formatDetector,
             new NullLogger(),
@@ -160,10 +165,10 @@ class RestListenerPathConverterTest extends TestCase
             new ErrorNormalizer(
                 new ArrayNormalizer(new ViolationNormalizer()),
                 new ArrayNormalizer(new ViolationNormalizer())
-            )
+            ),
+            $requestApiResolver
         );
 
-        $apiManager->addApiByKey($api, 'api');
         $apiManager->addDecoder(new Json(), 'json');
 
         $parameterToEntityMapBuilder = Mockery::mock(ParameterToEntityMapBuilder::class);
@@ -176,6 +181,7 @@ class RestListenerPathConverterTest extends TestCase
             $parameterToEntityMapBuilder,
             new RequestLogger(new NullLogger()),
             new ExceptionLogger(),
+            $requestApiResolver,
             []
         );
     }
