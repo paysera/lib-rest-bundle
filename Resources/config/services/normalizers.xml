@@ -15,7 +15,7 @@
             </call>
         </service>
         <!--Pass first argument to result normalizer, so from api.xml you don't need to use it-->
-        <service id="paysera_rest.normalizer.items_result" parent="paysera_rest.normalizer.result" abstract="true">
+        <service id="paysera_rest.normalizer.items_result" parent="paysera_rest.normalizer.result" abstract="true" public="true">
             <argument>items</argument>
         </service>
 
