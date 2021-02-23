@@ -1,5 +1,9 @@
 # Change Log
 
+## 5.0.1
+### Added
+- marked all services as `public`
+
 ## 5.0.0
 ### Changed
 - `ApiManager` is now lazy-loaded and REST related request checking is moved to other services
