@@ -1,5 +1,9 @@
 # Change Log
 
+## 5.0.2
+### Fixed
+- `paysera_rest.normalizer.items_result` marked as `public`
+
 ## 5.0.1
 ### Added
 - marked all services as `public`
