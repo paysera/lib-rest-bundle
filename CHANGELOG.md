@@ -1,5 +1,9 @@
 # Change Log
 
+## 5.0.3
+### Fixed
+- deprecation notices for Symfony 4 - if method exists use `TreeBuilder->getRootNode()` instead of `TreeBuilder->->root()`
+
 ## 5.0.2
 ### Fixed
 - `paysera_rest.normalizer.items_result` marked as `public`
