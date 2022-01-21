@@ -2,7 +2,7 @@
 
 ## 5.0.3
 ### Fixed
-- deprecation notices for Symfony 4 - if method exists use `TreeBuilder->getRootNode()` instead of `TreeBuilder->->root()`
+- Fix deprecation notices for Symfony 4 - if method exists use `TreeBuilder->getRootNode()` instead of `TreeBuilder->root()`.
 
 ## 5.0.2
 ### Fixed
