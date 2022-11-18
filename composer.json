@@ -7,7 +7,7 @@
         }
     },
     "require": {
-        "php": "^7.0",
+        "php": "^7.0 || ^8.0",
         "paysera/lib-serializer": "^3.0",
         "doctrine/orm": "^2.0",
         "symfony/config": "^3.0 || ^4.0",

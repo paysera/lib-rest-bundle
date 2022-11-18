@@ -1,5 +1,9 @@
 # Change Log
 
+## 5.0.4
+### Added
+- Added support for PHP 8.0
+
 ## 5.0.3
 ### Fixed
 - Fix deprecation notices for Symfony 4 - if method exists use `TreeBuilder->getRootNode()` instead of `TreeBuilder->root()`.
