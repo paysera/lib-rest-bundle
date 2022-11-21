@@ -31,7 +31,7 @@ class RoleAndIpStrategyTest extends TestCase
      */
     private $strategy;
 
-    public function setUp()
+    public function setUp(): void
     {
         /** @var TokenStorageInterface|PHPUnit_Framework_MockObject_MockObject $tokenStorageMock */
         $tokenStorageMock = $this->getMockBuilder(TokenStorageInterface::class)->getMock();

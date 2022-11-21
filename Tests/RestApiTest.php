@@ -19,8 +19,8 @@ class RestApiTest extends TestCase
     private $logger;
     private $messageStorage = [];
     private $controllerKey = 'Key:Key';
-    
-    public function setUp()
+
+    public function setUp(): void
     {
         $this->serviceContainer = Mockery::mock('Symfony\Component\DependencyInjection\ContainerInterface');
 
@@ -33,7 +33,7 @@ class RestApiTest extends TestCase
         $this->logger = Mockery::mock('Psr\Log\LoggerInterface');
         $this->logger->shouldReceive('debug')->andReturnUsing($this->storeMessage());
     }
-    
+
     public function controllerKeyProvider()
     {
         return [

@@ -40,7 +40,7 @@ class RestListenerPathConverterTest extends TestCase
      */
     private $filterControllerEvent;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->filterControllerEvent = Mockery::mock(FilterControllerEvent::class);
     }

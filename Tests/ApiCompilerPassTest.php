@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Paysera\Bundle\RestBundle\Tests;
 
 use Paysera\Bundle\RestBundle\DependencyInjection\Compiler\ApiCompilerPass;
@@ -32,7 +30,7 @@ class ApiCompilerPassTest extends TestCase
      */
     private $apiCompilerPass;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->serviceDefinition = new Definition();
         $this->resolverDefinition = $this->createMock(Definition::class);
