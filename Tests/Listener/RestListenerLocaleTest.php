@@ -24,7 +24,7 @@ class RestListenerLocaleTest extends TestCase
      */
     private $responseEvent;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->responseEvent = Mockery::mock(GetResponseEvent::class);
     }

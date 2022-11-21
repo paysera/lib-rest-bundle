@@ -28,7 +28,7 @@ class RequestApiResolverTest extends TestCase
      */
     private $requestApiResolver;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->restApiRegistry = Mockery::mock(RestApiRegistry::class);
         $this->apiKeyResolver = Mockery::mock(RequestApiKeyResolver::class);
