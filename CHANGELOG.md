@@ -1,5 +1,13 @@
 # Change Log
 
+## 6.0.0
+### Added
+- Added support for Symfony 5
+### Removed
+- Support for Symfony 3/4
+### Updated
+- Updated tests to not use legacy methods
+
 ## 5.0.4
 ### Added
 - Added support for PHP 8.0
