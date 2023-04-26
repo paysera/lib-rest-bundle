@@ -7,16 +7,16 @@
         }
     },
     "require": {
-        "php": "^7.1 || ^8.0",
+        "php": "^7.4 || ^8.0",
         "paysera/lib-serializer": "^3.0",
         "doctrine/orm": "^2.0",
-        "symfony/config": "^3.0 || ^4.0",
-        "symfony/dependency-injection": "^3.0 || ^4.0",
-        "symfony/validator": "^3.0 || ^4.0",
-        "symfony/security-core": "^3.0 || ^4.0",
-        "symfony/routing": "^3.0 || ^4.0",
-        "symfony/http-foundation": "^3.0 || ^4.0",
-        "symfony/http-kernel": "^3.0 || ^4.0"
+        "symfony/config": "^5.0",
+        "symfony/dependency-injection": "^5.0",
+        "symfony/validator": "^5.0",
+        "symfony/security-core": "^5.0",
+        "symfony/routing": "^5.0",
+        "symfony/http-foundation": "^5.0",
+        "symfony/http-kernel": "^5.0"
     },
     "config": {
         "bin-dir": "bin"

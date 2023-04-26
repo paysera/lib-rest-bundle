@@ -37,8 +37,8 @@ class RequestApiResolverTest extends TestCase
 
     public function testGetApiForRequest_MissingApiForApiKey()
     {
-        $this->apiKeyResolver->shouldReceive('getApiKeyForRequest')->andReturn('key');
-        $this->restApiRegistry->shouldReceive('getApiByKey')->andReturnNull();
+        $this->apiKeyResolver->allows('getApiKeyForRequest')->andReturns('key');
+        $this->restApiRegistry->allows('getApiByKey')->andReturnNull();
 
         $this->expectException(RuntimeException::class);
 
@@ -48,10 +48,10 @@ class RequestApiResolverTest extends TestCase
 
     public function testGetApiForRequest_ReturnsApiByKey()
     {
-        $this->apiKeyResolver->shouldReceive('getApiKeyForRequest')->andReturn('key');
+        $this->apiKeyResolver->allows('getApiKeyForRequest')->andReturns('key');
 
         $restApi = Mockery::mock(RestApi::class);
-        $this->restApiRegistry->shouldReceive('getApiByKey')->andReturn($restApi);
+        $this->restApiRegistry->allows('getApiByKey')->andReturns($restApi);
 
         $request = Mockery::mock(Request::class);
         $result = $this->requestApiResolver->getApiForRequest($request);
@@ -61,13 +61,13 @@ class RequestApiResolverTest extends TestCase
 
     public function testGetApiForRequest_ReturnsApiByUriPattern()
     {
-        $this->apiKeyResolver->shouldReceive('getApiKeyForRequest')->andReturnNull();
+        $this->apiKeyResolver->allows('getApiKeyForRequest')->andReturnNull();
 
         $restApi = Mockery::mock(RestApi::class);
-        $this->restApiRegistry->shouldReceive('getApiByUriPattern')->andReturn($restApi);
+        $this->restApiRegistry->allows('getApiByUriPattern')->andReturns($restApi);
 
         $request = Mockery::mock(Request::class);
-        $request->shouldReceive('getPathInfo')->andReturn('/foo/bar');
+        $request->allows('getPathInfo')->andReturns('/foo/bar');
 
         $this->requestApiResolver->setGlobalApiUriPattern('#^(/foo/bar)$#');
 
@@ -78,12 +78,12 @@ class RequestApiResolverTest extends TestCase
 
     public function testGetApiForRequest_ReturnsNullWithoutGlobalUriPattern()
     {
-        $this->apiKeyResolver->shouldReceive('getApiKeyForRequest')->andReturnNull();
+        $this->apiKeyResolver->allows('getApiKeyForRequest')->andReturnNull();
 
-        $this->restApiRegistry->shouldNotReceive('getApiByUriPattern');
+        $this->restApiRegistry->allows('getApiByUriPattern')->never();
 
         $request = Mockery::mock(Request::class);
-        $request->shouldReceive('getPathInfo')->andReturn('/foo/bar');
+        $request->allows('getPathInfo')->andReturns('/foo/bar');
 
         $result = $this->requestApiResolver->getApiForRequest($request);
 
@@ -92,12 +92,12 @@ class RequestApiResolverTest extends TestCase
 
     public function testGetApiForRequest_ReturnsNullWithoutPregMatch()
     {
-        $this->apiKeyResolver->shouldReceive('getApiKeyForRequest')->andReturnNull();
+        $this->apiKeyResolver->allows('getApiKeyForRequest')->andReturnNull();
 
-        $this->restApiRegistry->shouldNotReceive('getApiByUriPattern');
+        $this->restApiRegistry->allows('getApiByUriPattern')->never();
 
         $request = Mockery::mock(Request::class);
-        $request->shouldReceive('getPathInfo')->andReturn('/bar/baz');
+        $request->allows('getPathInfo')->andReturns('/bar/baz');
 
         $this->requestApiResolver->setGlobalApiUriPattern('#^(/foo/bar)$#');
 

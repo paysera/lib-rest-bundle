@@ -17,11 +17,11 @@ use Paysera\Bundle\RestBundle\Exception\ApiException;
 use Paysera\Component\Serializer\Exception\EncodingException;
 use Paysera\Bundle\RestBundle\ApiManager;
 use Paysera\Bundle\RestBundle\Service\RequestLogger;
-use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
-use Symfony\Component\HttpKernel\Event\GetResponseEvent;
-use Symfony\Component\HttpKernel\Event\GetResponseForControllerResultEvent;
+use Symfony\Component\HttpKernel\Event\ControllerEvent;
+use Symfony\Component\HttpKernel\Event\RequestEvent;
+use Symfony\Component\HttpKernel\Event\ViewEvent ;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent;
+use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Psr\Log\LoggerInterface;
 
 class RestListener
@@ -64,7 +64,7 @@ class RestListener
         $this->loggersCache = array();
     }
 
-    public function onKernelRequest(GetResponseEvent $event)
+    public function onKernelRequest(RequestEvent $event)
     {
         $request = $event->getRequest();
 
@@ -92,13 +92,13 @@ class RestListener
     /**
      * Ran on kernel.controller event
      *
-     * @param FilterControllerEvent $event
+     * @param ControllerEvent $event
      *
      * @throws ApiException
      * @throws InvalidDataException
      * @throws Exception
      */
-    public function onKernelController(FilterControllerEvent $event)
+    public function onKernelController(ControllerEvent $event)
     {
         /** @var $request Request */
         $request = $event->getRequest();
@@ -131,9 +131,9 @@ class RestListener
     /**
      * Ran on kernel.view event
      *
-     * @param GetResponseForControllerResultEvent $event
+     * @param ViewEvent $event
      */
-    public function onKernelView(GetResponseForControllerResultEvent $event)
+    public function onKernelView(ViewEvent $event)
     {
         /** @var $request Request */
         $request = $event->getRequest();
@@ -237,9 +237,9 @@ class RestListener
     /**
      * Ran on kernel.exception event
      *
-     * @param GetResponseForExceptionEvent $event
+     * @param ExceptionEvent $event
      */
-    public function onKernelException(GetResponseForExceptionEvent $event)
+    public function onKernelException(ExceptionEvent $event)
     {
         /** @var $request Request */
         $request = $event->getRequest();

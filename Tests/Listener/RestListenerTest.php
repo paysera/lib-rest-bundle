@@ -22,9 +22,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
-use Symfony\Component\HttpKernel\Event\GetResponseEvent;
-use Symfony\Component\HttpKernel\Event\GetResponseForControllerResultEvent;
+use Symfony\Component\HttpKernel\Event\ControllerEvent;
+use Symfony\Component\HttpKernel\Event\ViewEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationList;
@@ -63,9 +62,9 @@ class RestListenerTest extends TestCase
     private $requestLogger;
 
     /**
-     * @var MockInterface|FilterControllerEvent
+     * @var MockInterface|ControllerEvent
      */
-    private $filterControllerEvent;
+    private $ControllerEvent;
 
     /**
      * @var ExceptionLogger
@@ -88,13 +87,13 @@ class RestListenerTest extends TestCase
         $this->normalizerFactory = Mockery::mock(ContextAwareNormalizerFactory::class);
 
         $this->logger = Mockery::mock(LoggerInterface::class);
-        $this->logger->shouldReceive('debug')->andReturnUsing($this->storeLoggerMessage());
+        $this->logger->allows('debug')->andReturnUsing($this->storeLoggerMessage());
 
         $this->parameterToEntityMapBuilder = Mockery::mock(ParameterToEntityMapBuilder::class);
 
         $this->requestLogger = Mockery::mock(RequestLogger::class);
 
-        $this->filterControllerEvent = Mockery::mock(FilterControllerEvent::class);
+        $this->ControllerEvent = $this->getControllerEvent();
 
         $this->exceptionLogger = Mockery::mock(ExceptionLogger::class);
 
@@ -104,28 +103,22 @@ class RestListenerTest extends TestCase
     public function testOnKernelControllerNoMappersOnlyParameterToEntityMap()
     {
         $parameterToEntityMap = ['key' => 'entity'];
-        $request = Mockery::mock(Request::class);
-        $request->shouldReceive('getContent');
-        $parameterBag = new ParameterBag();
-        $parameterBag->set('_controller', 'controller');
-        $request->attributes = $parameterBag;
 
-        $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
-        $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(null);
+        $this->requestApiResolver->allows('getApiKeyForRequest');
+        $this->requestApiResolver->allows('getApiForRequest')->andReturns(null);
 
-        $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
-        $this->apiManager->shouldReceive('getLogger');
-        $this->apiManager->shouldReceive('getSecurityStrategy')->andReturnNull();
-        $this->apiManager->shouldReceive('getRequestQueryMapper')->andReturnNull();
-        $this->apiManager->shouldReceive('getRequestMapper')->andReturnNull();
-        $this->apiManager->shouldReceive('getRequestLoggingParts')->andReturnNull();
-        $this->parameterToEntityMapBuilder->shouldReceive('buildParameterToEntityMap')->andReturn($parameterToEntityMap);
+        $this->apiManager->allows('getLogger');
+        $this->apiManager->allows('getSecurityStrategy')->andReturnNull();
+        $this->apiManager->allows('getRequestQueryMapper')->andReturnNull();
+        $this->apiManager->allows('getRequestMapper')->andReturnNull();
+        $this->apiManager->allows('getRequestLoggingParts')->andReturnNull();
+        $this->parameterToEntityMapBuilder->allows('buildParameterToEntityMap')->andReturns($parameterToEntityMap);
 
         $restListener = $this->createRestListener();
 
-        $restListener->onKernelController($this->filterControllerEvent);
+        $restListener->onKernelController($this->ControllerEvent);
         $key = key($parameterToEntityMap);
-        $this->assertEquals($parameterToEntityMap[$key], $parameterBag->get($key));
+        $this->assertEquals($parameterToEntityMap[$key], $this->ControllerEvent->getRequest()->attributes->get($key));
     }
 
     public function testOnKernelControllerWithMapperAndParameterToEntityMap()
@@ -133,169 +126,157 @@ class RestListenerTest extends TestCase
         $entity = [1];
         $parameterToEntityMap = ['key' => $entity];
         $name = 'requestName';
-        $request = Mockery::mock(Request::class);
-        $request->shouldReceive('getContent');
-        $parameterBag = new ParameterBag();
-        $parameterBag->set('_controller', 'controller');
-        $request->attributes = $parameterBag;
 
         $requestMapper = Mockery::mock(NameAwareDenormalizerInterface::class);
-        $requestMapper->shouldReceive('mapToEntity')->andReturn($entity);
-        $requestMapper->shouldReceive('getName')->andReturn($name);
+        $requestMapper->allows('mapToEntity')->andReturns($entity);
+        $requestMapper->allows('getName')->andReturns($name);
 
-        $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
-        $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(null);
+        $this->requestApiResolver->allows('getApiKeyForRequest');
+        $this->requestApiResolver->allows('getApiForRequest')->andReturns(null);
 
-        $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
-        $this->apiManager->shouldReceive('getLogger');
-        $this->apiManager->shouldReceive('getSecurityStrategy')->andReturnNull();
-        $this->apiManager->shouldReceive('getRequestQueryMapper')->andReturnNull();
-        $this->apiManager->shouldReceive('getValidationGroups');
-        $this->apiManager->shouldReceive('getRequestMapper')->andReturn($requestMapper);
-        $this->apiManager->shouldReceive('getRequestLoggingParts')->andReturnNull();
-        $this->parameterToEntityMapBuilder->shouldReceive('buildParameterToEntityMap')->andReturn($parameterToEntityMap);
+        $this->apiManager->allows('getLogger');
+        $this->apiManager->allows('getSecurityStrategy')->andReturnNull();
+        $this->apiManager->allows('getRequestQueryMapper')->andReturnNull();
+        $this->apiManager->allows('getValidationGroups');
+        $this->apiManager->allows('getRequestMapper')->andReturns($requestMapper);
+        $this->apiManager->allows('getRequestLoggingParts')->andReturnNull();
+        $this->parameterToEntityMapBuilder->allows('buildParameterToEntityMap')->andReturns($parameterToEntityMap);
 
         $restListener = $this->createRestListener();
 
-        $restListener->onKernelController($this->filterControllerEvent);
+        $restListener->onKernelController($this->ControllerEvent);
         $key = key($parameterToEntityMap);
-        $this->assertEquals($parameterToEntityMap[$key], $parameterBag->get($key));
-        $this->assertEquals($entity, $parameterBag->get($name));
+        $this->assertEquals($parameterToEntityMap[$key], $this->ControllerEvent->getRequest()->attributes->get($key));
+        $this->assertEquals($entity, $this->ControllerEvent->getRequest()->attributes->get($key));
     }
 
     public function testOnKernelControllerWithRequestMapperWhenDecodingFails()
     {
         $this->expectException(ApiException::class);
+
         $request = Mockery::mock(Request::class);
-        $request->shouldReceive('getContent')->andReturn('a=b&c=d');
+        $request->allows('getContent')->andReturns('a=b&c=d');
         $parameterBag = new ParameterBag();
         $parameterBag->set('_controller', 'controller');
         $request->attributes = $parameterBag;
 
+        $controllerEvent = new ControllerEvent(
+            Mockery::mock(HttpKernelInterface::class),
+            function () {
+            },
+            $request,
+            HttpKernelInterface::MAIN_REQUEST
+        );
 
         $requestMapper = Mockery::mock(NameAwareDenormalizerInterface::class);
-        $requestMapper->shouldReceive('mapToEntity');
-        $requestMapper->shouldReceive('getName')->andReturn('name');
+        $requestMapper->allows('mapToEntity');
+        $requestMapper->allows('getName')->andReturns('name');
 
-        $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
-        $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(null);
+        $this->requestApiResolver->allows('getApiKeyForRequest');
+        $this->requestApiResolver->allows('getApiForRequest')->andReturns(null);
 
-        $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
-        $this->apiManager->shouldReceive('getLogger');
-        $this->apiManager->shouldReceive('getSecurityStrategy')->andReturnNull();
-        $this->apiManager->shouldReceive('getDecoder')->andThrow(EncodingException::class);
-        $this->apiManager->shouldReceive('getRequestQueryMapper')->andReturnNull();
-        $this->apiManager->shouldReceive('getRequestMapper')->andReturn($requestMapper);
-        $this->apiManager->shouldReceive('getValidationGroups');
-        $this->apiManager->shouldReceive('getRequestLoggingParts')->andReturnNull();
-        $this->parameterToEntityMapBuilder->shouldReceive('buildParameterToEntityMap')->andReturn([]);
+        $this->apiManager->allows('getLogger');
+        $this->apiManager->allows('getSecurityStrategy')->andReturnNull();
+        $this->apiManager->allows('getDecoder')->andThrow(EncodingException::class);
+        $this->apiManager->allows('getRequestQueryMapper')->andReturnNull();
+        $this->apiManager->allows('getRequestMapper')->andReturns($requestMapper);
+        $this->apiManager->allows('getValidationGroups');
+        $this->apiManager->allows('getRequestLoggingParts')->andReturnNull();
+        $this->parameterToEntityMapBuilder->allows('buildParameterToEntityMap')->andReturns([]);
 
         $restListener = $this->createRestListener();
 
-        $restListener->onKernelController($this->filterControllerEvent);
+        $restListener->onKernelController($controllerEvent);
     }
 
     public function testOnKernelControllerWithRequestMapperWhenMappingFails()
     {
         $this->expectException(ApiException::class);
-        $this->logger->shouldReceive('notice')->andReturnUsing($this->storeLoggerMessage());
+        $this->logger->allows('notice')->andReturnUsing($this->storeLoggerMessage());
         $request = Mockery::mock(Request::class);
-        $request->shouldReceive('getContent');
+        $request->allows('getContent');
         $parameterBag = new ParameterBag();
         $parameterBag->set('_controller', 'controller');
         $request->attributes = $parameterBag;
 
         $requestMapper = Mockery::mock(NameAwareDenormalizerInterface::class);
-        $requestMapper->shouldReceive('mapToEntity')->andThrow(InvalidDataException::class);
-        $requestMapper->shouldReceive('getName')->andReturn('name');
+        $requestMapper->allows('mapToEntity')->andThrow(InvalidDataException::class);
+        $requestMapper->allows('getName')->andReturns('name');
 
-        $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
-        $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(null);
+        $this->requestApiResolver->allows('getApiKeyForRequest');
+        $this->requestApiResolver->allows('getApiForRequest')->andReturns(null);
 
-        $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
-        $this->apiManager->shouldReceive('getLogger');
-        $this->apiManager->shouldReceive('getSecurityStrategy')->andReturnNull();
-        $this->apiManager->shouldReceive('getRequestQueryMapper')->andReturnNull();
-        $this->apiManager->shouldReceive('getRequestMapper')->andReturn($requestMapper);
-        $this->apiManager->shouldReceive('getValidationGroups');
-        $this->apiManager->shouldReceive('getRequestLoggingParts')->andReturnNull();
-        $this->parameterToEntityMapBuilder->shouldReceive('buildParameterToEntityMap')->andReturn([]);
+        $this->apiManager->allows('getLogger');
+        $this->apiManager->allows('getSecurityStrategy')->andReturnNull();
+        $this->apiManager->allows('getRequestQueryMapper')->andReturnNull();
+        $this->apiManager->allows('getRequestMapper')->andReturns($requestMapper);
+        $this->apiManager->allows('getValidationGroups');
+        $this->apiManager->allows('getRequestLoggingParts')->andReturnNull();
+        $this->parameterToEntityMapBuilder->allows('buildParameterToEntityMap')->andReturns([]);
 
         $restListener = $this->createRestListener();
 
-        $restListener->onKernelController($this->filterControllerEvent);
+        $restListener->onKernelController($this->ControllerEvent);
     }
 
     public function testOnKernelControllerWithRequestMapperWhenMappingSucceedsWithoutValidation()
     {
         $name = 'requestName';
         $entity = [1];
-        $this->logger->shouldReceive('notice')->andReturnUsing($this->storeLoggerMessage());
-        $request = Mockery::mock(Request::class);
-        $request->shouldReceive('getContent');
-        $parameterBag = new ParameterBag();
-        $parameterBag->set('_controller', 'controller');
-        $request->attributes = $parameterBag;
+        $this->logger->allows('notice')->andReturnUsing($this->storeLoggerMessage());
 
         $requestMapper = Mockery::mock(NameAwareDenormalizerInterface::class);
-        $requestMapper->shouldReceive('mapToEntity')->andReturn($entity);
-        $requestMapper->shouldReceive('getName')->andReturn($name);
+        $requestMapper->allows('mapToEntity')->andReturns($entity);
+        $requestMapper->allows('getName')->andReturns($name);
 
-        $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
-        $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(null);
+        $this->requestApiResolver->allows('getApiKeyForRequest');
+        $this->requestApiResolver->allows('getApiForRequest')->andReturns(null);
 
-        $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
-        $this->apiManager->shouldReceive('getLogger');
-        $this->apiManager->shouldReceive('getSecurityStrategy')->andReturnNull();
-        $this->apiManager->shouldReceive('getRequestQueryMapper')->andReturnNull();
-        $this->apiManager->shouldReceive('getRequestMapper')->andReturn($requestMapper);
-        $this->apiManager->shouldReceive('getValidationGroups');
-        $this->apiManager->shouldReceive('getRequestLoggingParts')->andReturnNull();
-        $this->parameterToEntityMapBuilder->shouldReceive('buildParameterToEntityMap')->andReturn([]);
+        $this->apiManager->allows('getLogger');
+        $this->apiManager->allows('getSecurityStrategy')->andReturnNull();
+        $this->apiManager->allows('getRequestQueryMapper')->andReturnNull();
+        $this->apiManager->allows('getRequestMapper')->andReturns($requestMapper);
+        $this->apiManager->allows('getValidationGroups');
+        $this->apiManager->allows('getRequestLoggingParts')->andReturnNull();
+        $this->parameterToEntityMapBuilder->allows('buildParameterToEntityMap')->andReturns([]);
 
         $restListener = $this->createRestListener();
 
-        $restListener->onKernelController($this->filterControllerEvent);
-        $this->assertEquals($entity, $parameterBag->get($name));
+        $restListener->onKernelController($this->ControllerEvent);
+        $this->assertEquals($entity, $this->ControllerEvent->getRequest()->attributes->get($name));
     }
 
     public function testOnKernelControllerWithRequestMapperWhenMappingSucceedsWithValidation()
     {
         $name = 'requestName';
         $entity = [1];
-        $this->logger->shouldReceive('notice')->andReturnUsing($this->storeLoggerMessage());
-        $request = Mockery::mock(Request::class);
-        $request->shouldReceive('getContent');
-        $parameterBag = new ParameterBag();
-        $parameterBag->set('_controller', 'controller');
-        $request->attributes = $parameterBag;
+        $this->logger->allows('notice')->andReturnUsing($this->storeLoggerMessage());
 
         $requestMapper = Mockery::mock(NameAwareDenormalizerInterface::class);
-        $requestMapper->shouldReceive('mapToEntity')->andReturn($entity);
-        $requestMapper->shouldReceive('getName')->andReturn($name);
+        $requestMapper->allows('mapToEntity')->andReturns($entity);
+        $requestMapper->allows('getName')->andReturns($name);
 
-        $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
-        $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(null);
+        $this->requestApiResolver->allows('getApiKeyForRequest');
+        $this->requestApiResolver->allows('getApiForRequest')->andReturns(null);
 
-        $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
-        $this->apiManager->shouldReceive('getLogger');
-        $this->apiManager->shouldReceive('getSecurityStrategy')->andReturnNull();
-        $this->apiManager->shouldReceive('getRequestQueryMapper')->andReturnNull();
-        $this->apiManager->shouldReceive('getRequestMapper')->andReturn($requestMapper);
-        $this->apiManager->shouldReceive('getValidationGroups')->andReturn([]);
-        $this->apiManager->shouldReceive('createPropertiesValidator')->andReturnNull();
-        $this->apiManager->shouldReceive('getRequestLoggingParts')->andReturnNull();
+        $this->apiManager->allows('getLogger');
+        $this->apiManager->allows('getSecurityStrategy')->andReturnNull();
+        $this->apiManager->allows('getRequestQueryMapper')->andReturnNull();
+        $this->apiManager->allows('getRequestMapper')->andReturns($requestMapper);
+        $this->apiManager->allows('getValidationGroups')->andReturns([]);
+        $this->apiManager->allows('createPropertiesValidator')->andReturnNull();
+        $this->apiManager->allows('getRequestLoggingParts')->andReturnNull();
 
         $propertiesAwareValidator = $this->createPropertiesAwareValidator();
-        $propertiesAwareValidator->shouldReceive('validate')->andThrow(InvalidDataException::class);
-        $this->apiManager->shouldReceive('createPropertiesValidator')->andReturn($propertiesAwareValidator);
+        $propertiesAwareValidator->allows('validate')->andThrow(InvalidDataException::class);
+        $this->apiManager->allows('createPropertiesValidator')->andReturns($propertiesAwareValidator);
 
-        $this->parameterToEntityMapBuilder->shouldReceive('buildParameterToEntityMap')->andReturn([]);
+        $this->parameterToEntityMapBuilder->allows('buildParameterToEntityMap')->andReturns([]);
 
         $restListener = $this->createRestListener();
 
-        $restListener->onKernelController($this->filterControllerEvent);
-        $this->assertEquals($entity, $parameterBag->get($name));
+        $restListener->onKernelController($this->ControllerEvent);
+        $this->assertEquals($entity, $this->ControllerEvent->getRequest()->attributes->get($name));
     }
 
     public function testOnKernelControllerWithRequestMapperValidationThrowsException()
@@ -303,71 +284,57 @@ class RestListenerTest extends TestCase
         $this->expectException(ApiException::class);
         $name = 'requestName';
         $entity = [1];
-        $this->logger->shouldReceive('notice')->andReturnUsing($this->storeLoggerMessage());
-        $request = Mockery::mock(Request::class);
-        $request->shouldReceive('getContent');
-        $parameterBag = new ParameterBag();
-        $parameterBag->set('_controller', 'controller');
-        $request->attributes = $parameterBag;
+        $this->logger->allows('notice')->andReturnUsing($this->storeLoggerMessage());
 
         $requestMapper = Mockery::mock(NameAwareDenormalizerInterface::class);
-        $requestMapper->shouldReceive('mapToEntity')->andReturn($entity);
-        $requestMapper->shouldReceive('getName')->andReturn($name);
+        $requestMapper->allows('mapToEntity')->andReturns($entity);
+        $requestMapper->allows('getName')->andReturns($name);
 
-        $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
-        $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(null);
+        $this->requestApiResolver->allows('getApiKeyForRequest');
+        $this->requestApiResolver->allows('getApiForRequest')->andReturns(null);
 
-        $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
-        $this->apiManager->shouldReceive('getLogger');
-        $this->apiManager->shouldReceive('getSecurityStrategy')->andReturnNull();
-        $this->apiManager->shouldReceive('getRequestQueryMapper')->andReturnNull();
-        $this->apiManager->shouldReceive('getRequestMapper')->andReturn($requestMapper);
-        $this->apiManager->shouldReceive('getValidationGroups')->andReturn([RestApi::DEFAULT_VALIDATION_GROUP]);
-        $this->apiManager->shouldReceive('getRequestLoggingParts')->andReturnNull();
+        $this->apiManager->allows('getLogger');
+        $this->apiManager->allows('getSecurityStrategy')->andReturnNull();
+        $this->apiManager->allows('getRequestQueryMapper')->andReturnNull();
+        $this->apiManager->allows('getRequestMapper')->andReturns($requestMapper);
+        $this->apiManager->allows('getValidationGroups')->andReturns([RestApi::DEFAULT_VALIDATION_GROUP]);
+        $this->apiManager->allows('getRequestLoggingParts')->andReturnNull();
 
         $propertiesAwareValidator = $this->createPropertiesAwareValidator();
-        $propertiesAwareValidator->shouldReceive('validate')->andThrow(InvalidDataException::class);
-        $this->apiManager->shouldReceive('createPropertiesValidator')->andReturn($propertiesAwareValidator);
+        $propertiesAwareValidator->allows('validate')->andThrow(InvalidDataException::class);
+        $this->apiManager->allows('createPropertiesValidator')->andReturns($propertiesAwareValidator);
 
-        $this->parameterToEntityMapBuilder->shouldReceive('buildParameterToEntityMap')->andReturn([]);
+        $this->parameterToEntityMapBuilder->allows('buildParameterToEntityMap')->andReturns([]);
 
         $restListener = $this->createRestListener();
 
-        $restListener->onKernelController($this->filterControllerEvent);
-        $this->assertEquals($entity, $parameterBag->get($name));
+        $restListener->onKernelController($this->ControllerEvent);
+        $this->assertEquals($entity, $this->ControllerEvent->getRequest()->attributes->get($name));
     }
 
     public function testOnKernelControllerWithRequestQueryMapperWhenMappingFails()
     {
         $this->expectException(ApiException::class);
-        $this->logger->shouldReceive('notice')->andReturnUsing($this->storeLoggerMessage());
-        $request = Mockery::mock(Request::class);
-        $request->shouldReceive('getContent');
-        $parameterBag = new ParameterBag();
-        $parameterBag->set('_controller', 'controller');
-        $request->attributes = $parameterBag;
-        $queryParameterBag = new ParameterBag();
-        $request->query = $queryParameterBag;
+        $this->logger->allows('notice')->andReturnUsing($this->storeLoggerMessage());
 
         $requestMapper = Mockery::mock(NameAwareDenormalizerInterface::class);
-        $requestMapper->shouldReceive('mapToEntity')->andThrow(InvalidDataException::class);
-        $requestMapper->shouldReceive('getName')->andReturn('name');
+        $requestMapper->allows('mapToEntity')->andThrow(InvalidDataException::class);
+        $requestMapper->allows('getName')->andReturns('name');
 
-        $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
-        $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(null);
+        $this->requestApiResolver->allows('getApiKeyForRequest');
+        $this->requestApiResolver->allows('getApiForRequest')->andReturns(null);
 
-        $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
-        $this->apiManager->shouldReceive('getLogger');
-        $this->apiManager->shouldReceive('getSecurityStrategy')->andReturnNull();
-        $this->apiManager->shouldReceive('getRequestQueryMapper')->andReturn($requestMapper);
-        $this->apiManager->shouldReceive('getRequestMapper')->andReturnNull();
-        $this->apiManager->shouldReceive('getValidationGroups');
-        $this->apiManager->shouldReceive('getRequestLoggingParts')->andReturnNull();
-        $this->parameterToEntityMapBuilder->shouldReceive('buildParameterToEntityMap')->andReturn([]);
+        $this->apiManager->allows('getLogger');
+        $this->apiManager->allows('getSecurityStrategy')->andReturnNull();
+        $this->apiManager->allows('getRequestQueryMapper')->andReturns($requestMapper);
+        $this->apiManager->allows('getRequestMapper')->andReturnNull();
+        $this->apiManager->allows('getValidationGroups');
+        $this->apiManager->allows('getRequestLoggingParts')->andReturnNull();
+        $this->parameterToEntityMapBuilder->allows('buildParameterToEntityMap')->andReturns([]);
 
         $restListener = $this->createRestListener();
 
-        $restListener->onKernelController($this->filterControllerEvent);
+        $restListener->onKernelController($this->ControllerEvent);
     }
 
     public function testOnKernelControllerWithRequestQueryMapperValidationThrowsException()
@@ -375,81 +342,65 @@ class RestListenerTest extends TestCase
         $this->expectException(ApiException::class);
         $name = 'requestName';
         $entity = [1];
-        $this->logger->shouldReceive('notice')->andReturnUsing($this->storeLoggerMessage());
-        $request = Mockery::mock(Request::class);
-        $request->shouldReceive('getContent');
-        $parameterBag = new ParameterBag();
-        $parameterBag->set('_controller', 'controller');
-        $request->attributes = $parameterBag;
-        $queryParameterBag = new ParameterBag();
-        $request->query = $queryParameterBag;
+        $this->logger->allows('notice')->andReturnUsing($this->storeLoggerMessage());
 
         $requestMapper = Mockery::mock(NameAwareDenormalizerInterface::class);
-        $requestMapper->shouldReceive('mapToEntity')->andReturn($entity);
-        $requestMapper->shouldReceive('getName')->andReturn($name);
+        $requestMapper->allows('mapToEntity')->andReturns($entity);
+        $requestMapper->allows('getName')->andReturns($name);
 
-        $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
-        $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(null);
+        $this->requestApiResolver->allows('getApiKeyForRequest');
+        $this->requestApiResolver->allows('getApiForRequest')->andReturns(null);
 
-        $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
-        $this->apiManager->shouldReceive('getLogger');
-        $this->apiManager->shouldReceive('getSecurityStrategy')->andReturnNull();
-        $this->apiManager->shouldReceive('getRequestQueryMapper')->andReturn($requestMapper);
-        $this->apiManager->shouldReceive('getRequestMapper')->andReturnNull();
-        $this->apiManager->shouldReceive('getValidationGroups')->andReturn([RestApi::DEFAULT_VALIDATION_GROUP]);
-        $this->apiManager->shouldReceive('getRequestLoggingParts')->andReturnNull();
+        $this->apiManager->allows('getLogger');
+        $this->apiManager->allows('getSecurityStrategy')->andReturnNull();
+        $this->apiManager->allows('getRequestQueryMapper')->andReturns($requestMapper);
+        $this->apiManager->allows('getRequestMapper')->andReturnNull();
+        $this->apiManager->allows('getValidationGroups')->andReturns([RestApi::DEFAULT_VALIDATION_GROUP]);
+        $this->apiManager->allows('getRequestLoggingParts')->andReturnNull();
 
         $propertiesAwareValidator = $this->createPropertiesAwareValidator();
-        $propertiesAwareValidator->shouldReceive('validate')->andThrow(InvalidDataException::class);
-        $this->apiManager->shouldReceive('createPropertiesValidator')->andReturn($propertiesAwareValidator);
+        $propertiesAwareValidator->allows('validate')->andThrow(InvalidDataException::class);
+        $this->apiManager->allows('createPropertiesValidator')->andReturns($propertiesAwareValidator);
 
-        $this->parameterToEntityMapBuilder->shouldReceive('buildParameterToEntityMap')->andReturn([]);
+        $this->parameterToEntityMapBuilder->allows('buildParameterToEntityMap')->andReturns([]);
 
         $restListener = $this->createRestListener();
 
-        $restListener->onKernelController($this->filterControllerEvent);
-        $this->assertEquals($entity, $parameterBag->get($name));
+        $restListener->onKernelController($this->ControllerEvent);
+        $this->assertEquals($entity, $this->ControllerEvent->getRequest()->attributes->get($name));
     }
 
     public function testOnKernelControllerWithRequestQueryMapperWhenMappingSucceedsWithValidation()
     {
         $name = 'requestName';
         $entity = [1];
-        $this->logger->shouldReceive('notice')->andReturnUsing($this->storeLoggerMessage());
-        $request = Mockery::mock(Request::class);
-        $request->shouldReceive('getContent');
-        $parameterBag = new ParameterBag();
-        $parameterBag->set('_controller', 'controller');
-        $request->attributes = $parameterBag;
-        $queryParameterBag = new ParameterBag();
-        $request->query = $queryParameterBag;
+        $this->logger->allows('notice')->andReturnUsing($this->storeLoggerMessage());
 
         $requestMapper = Mockery::mock(NameAwareDenormalizerInterface::class);
-        $requestMapper->shouldReceive('mapToEntity')->andReturn($entity);
-        $requestMapper->shouldReceive('getName')->andReturn($name);
+        $requestMapper->allows('mapToEntity')->andReturns($entity);
+        $requestMapper->allows('getName')->andReturns($name);
 
-        $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
-        $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(null);
+        $this->requestApiResolver->allows('getApiKeyForRequest');
+        $this->requestApiResolver->allows('getApiForRequest')->andReturns(null);
 
-        $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
-        $this->apiManager->shouldReceive('getLogger');
-        $this->apiManager->shouldReceive('getSecurityStrategy')->andReturnNull();
-        $this->apiManager->shouldReceive('getRequestQueryMapper')->andReturn($requestMapper);
-        $this->apiManager->shouldReceive('getRequestMapper')->andReturnNull();
-        $this->apiManager->shouldReceive('getValidationGroups')->andReturn([RestApi::DEFAULT_VALIDATION_GROUP]);
-        $this->apiManager->shouldReceive('createPropertiesValidator')->andReturnNull();
-        $this->apiManager->shouldReceive('getRequestLoggingParts')->andReturnNull();
+        $this->apiManager->allows('getLogger');
+        $this->apiManager->allows('getSecurityStrategy')->andReturnNull();
+        $this->apiManager->allows('getRequestQueryMapper')->andReturns($requestMapper);
+        $this->apiManager->allows('getRequestMapper')->andReturnNull();
+        $this->apiManager->allows('getValidationGroups')->andReturns([RestApi::DEFAULT_VALIDATION_GROUP]);
+        $this->apiManager->allows('createPropertiesValidator')->andReturnNull();
+        $this->apiManager->allows('getRequestLoggingParts')->andReturnNull();
 
         $propertiesAwareValidator = $this->createPropertiesAwareValidator();
-        $propertiesAwareValidator->shouldReceive('validate');
-        $this->apiManager->shouldReceive('createPropertiesValidator')->andReturn($propertiesAwareValidator);
+        $propertiesAwareValidator->allows('validate');
+        $this->apiManager->allows('createPropertiesValidator')->andReturns($propertiesAwareValidator);
 
-        $this->parameterToEntityMapBuilder->shouldReceive('buildParameterToEntityMap')->andReturn([]);
+        $this->parameterToEntityMapBuilder->allows('buildParameterToEntityMap')->andReturns([]);
 
         $restListener = $this->createRestListener();
 
-        $restListener->onKernelController($this->filterControllerEvent);
-        $this->assertEquals($entity, $parameterBag->get($name));
+        $restListener->onKernelController($this->ControllerEvent);
+        $this->assertEquals($entity, $this->ControllerEvent->getRequest()->attributes->get($name));
     }
 
     public function testOnKernelControllerWithRequestQueryMapperValidationThrowsExceptionWithPathConverter()
@@ -459,50 +410,42 @@ class RestListenerTest extends TestCase
             'firstName' => 1,
             'last_name' => 2,
         ];
-        $this->logger->shouldReceive('notice')->andReturnUsing($this->storeLoggerMessage());
-        $request = Mockery::mock(Request::class);
-        $request->shouldReceive('getContent');
-        $parameterBag = new ParameterBag();
-        $parameterBag->set('_controller', 'controller');
-        $request->attributes = $parameterBag;
-        $queryParameterBag = new ParameterBag();
-        $request->query = $queryParameterBag;
+        $this->logger->allows('notice')->andReturnUsing($this->storeLoggerMessage());
 
         $requestMapper = Mockery::mock(NameAwareDenormalizerInterface::class);
-        $requestMapper->shouldReceive('mapToEntity')->andReturn($entity);
-        $requestMapper->shouldReceive('getName')->andReturn($name);
+        $requestMapper->allows('mapToEntity')->andReturns($entity);
+        $requestMapper->allows('getName')->andReturns($name);
 
-        $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
-        $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(null);
+        $this->requestApiResolver->allows('getApiKeyForRequest');
+        $this->requestApiResolver->allows('getApiForRequest')->andReturns(null);
 
-        $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
-        $this->apiManager->shouldReceive('getLogger');
-        $this->apiManager->shouldReceive('getSecurityStrategy')->andReturnNull();
-        $this->apiManager->shouldReceive('getRequestQueryMapper')->andReturn($requestMapper);
-        $this->apiManager->shouldReceive('getRequestMapper')->andReturnNull();
-        $this->apiManager->shouldReceive('getValidationGroups')->andReturn([RestApi::DEFAULT_VALIDATION_GROUP]);
-        $this->apiManager->shouldReceive('getRequestLoggingParts')->andReturnNull();
+        $this->apiManager->allows('getLogger');
+        $this->apiManager->allows('getSecurityStrategy')->andReturnNull();
+        $this->apiManager->allows('getRequestQueryMapper')->andReturns($requestMapper);
+        $this->apiManager->allows('getRequestMapper')->andReturnNull();
+        $this->apiManager->allows('getValidationGroups')->andReturns([RestApi::DEFAULT_VALIDATION_GROUP]);
+        $this->apiManager->allows('getRequestLoggingParts')->andReturnNull();
 
         $validator = Mockery::mock(ValidatorInterface::class);
         $violationList = new ConstraintViolationList([
             new ConstraintViolation('firstName message', '', [], '', 'firstName', '1'),
             new ConstraintViolation('lastName message', '', [], '', 'last_name', '2'),
         ]);
-        $validator->shouldReceive('validate')->andReturn($violationList);
+        $validator->allows('validate')->andReturns($violationList);
         $propertyPathConverter = Mockery::mock(PropertyPathConverterInterface::class);
-        $propertyPathConverter->shouldReceive('convert')->andReturnUsing(function ($path) {
+        $propertyPathConverter->allows('convert')->andReturnUsing(function ($path) {
             return strtoupper($path);
         });
         $propertiesAwareValidator = new PropertiesAwareValidator($validator, $propertyPathConverter);
-        $this->apiManager->shouldReceive('createPropertiesValidator')->andReturn($propertiesAwareValidator);
+        $this->apiManager->allows('createPropertiesValidator')->andReturns($propertiesAwareValidator);
 
-        $this->parameterToEntityMapBuilder->shouldReceive('buildParameterToEntityMap')->andReturn([]);
+        $this->parameterToEntityMapBuilder->allows('buildParameterToEntityMap')->andReturns([]);
 
         $restListener = $this->createRestListener();
 
         $exceptionThrowed = false;
         try {
-            $restListener->onKernelController($this->filterControllerEvent);
+            $restListener->onKernelController($this->ControllerEvent);
         } catch (ApiException $apiException) {
             $exceptionThrowed = true;
             $this->assertEquals(
@@ -523,26 +466,26 @@ class RestListenerTest extends TestCase
         }
 
         $this->assertTrue($exceptionThrowed);
-        $this->assertNull($parameterBag->get($name));
+        $this->assertNull($this->ControllerEvent->getRequest()->attributes->get($name));
     }
 
     public function testOnKernelViewResponseHasXFrameOptionsHeader()
     {
         $restListener = $this->createRestListener();
 
-        $this->apiManager->shouldReceive('getLogger');
-        $this->apiManager->shouldReceive('getCacheStrategy');
-        $this->apiManager->shouldReceive('getRequestLoggingParts')->andReturnNull();
+        $this->apiManager->allows('getLogger');
+        $this->apiManager->allows('getCacheStrategy');
+        $this->apiManager->allows('getRequestLoggingParts')->andReturnNull();
 
         $restApi = Mockery::mock(RestApi::class);
 
-        $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
-        $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn($restApi);
+        $this->requestApiResolver->allows('getApiKeyForRequest');
+        $this->requestApiResolver->allows('getApiForRequest')->andReturns($restApi);
 
         $httpKernelMock = Mockery::mock(HttpKernelInterface::class);
         $requestMock = Mockery::mock(Request::class);
 
-        $event = new GetResponseForControllerResultEvent(
+        $event = new ViewEvent(
             $httpKernelMock,
             $requestMock,
             HttpKernelInterface::MASTER_REQUEST,
@@ -586,5 +529,24 @@ class RestListenerTest extends TestCase
     private function createPropertiesAwareValidator()
     {
         return Mockery::mock(PropertiesAwareValidator::class);
+    }
+
+    private function getControllerEvent(): ControllerEvent
+    {
+        $request = Mockery::mock(Request::class);
+        $request->allows('getContent');
+        $parameterBag = new ParameterBag();
+        $parameterBag->set('_controller', 'controller');
+        $request->attributes = $parameterBag;
+        $queryParameterBag = new ParameterBag();
+        $request->query = $queryParameterBag;
+
+        return new ControllerEvent(
+            Mockery::mock(HttpKernelInterface::class),
+            function () {
+            },
+            $request,
+            HttpKernelInterface::MAIN_REQUEST
+        );
     }
 }

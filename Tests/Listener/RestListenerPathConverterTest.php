@@ -3,7 +3,6 @@
 namespace Paysera\Bundle\RestBundle\Tests;
 
 use Mockery;
-use Mockery\MockInterface;
 use Paysera\Bundle\RestBundle\ApiManager;
 use Paysera\Bundle\RestBundle\Exception\ApiException;
 use Paysera\Bundle\RestBundle\Listener\RestListener;
@@ -28,31 +27,21 @@ use Psr\Log\NullLogger;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
+use Symfony\Component\HttpKernel\Event\ControllerEvent;
+use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class RestListenerPathConverterTest extends TestCase
 {
-    /**
-     * @var MockInterface|FilterControllerEvent
-     */
-    private $filterControllerEvent;
-
-    public function setUp(): void
-    {
-        $this->filterControllerEvent = Mockery::mock(FilterControllerEvent::class);
-    }
-
     public function testOnKernelControllerWithRequestQueryMapperValidationThrowsExceptionWithCamelCasePathConverter()
     {
         $exceptionThrown = false;
         try {
             $this
                 ->createRestListener(new CamelCaseToSnakeCaseConverter())
-                ->onKernelController($this->filterControllerEvent)
-            ;
+                ->onKernelController($this->getControllerEvent());
         } catch (ApiException $apiException) {
             $exceptionThrown = true;
             $this->assertEquals(
@@ -66,34 +55,6 @@ class RestListenerPathConverterTest extends TestCase
             $this->assertEquals(
                 [
                     (new Violation())->setField('first_name')->setMessage('firstName message'),
-                    (new Violation())->setField('last_name')->setMessage('lastName message'),
-                ],
-                $apiException->getViolations()
-            );
-        }
-
-        $this->assertTrue($exceptionThrown);
-    }
-
-    public function testOnKernelControllerWithRequestQueryMapperValidationThrowsExceptionWithNoOpConverter()
-    {
-        $exceptionThrown = false;
-        try {
-            $this->createRestListener(new NoOpConverter())->onKernelController($this->filterControllerEvent);
-            $this->expectException(ApiException::class);
-        } catch (ApiException $apiException) {
-            $exceptionThrown = true;
-            $this->assertEquals(
-                [
-                    'firstName' => ['firstName message'],
-                    'last_name' => ['lastName message'],
-                ],
-                $apiException->getProperties()
-            );
-
-            $this->assertEquals(
-                [
-                    (new Violation())->setField('firstName')->setMessage('firstName message'),
                     (new Violation())->setField('last_name')->setMessage('lastName message'),
                 ],
                 $apiException->getViolations()
@@ -124,11 +85,9 @@ class RestListenerPathConverterTest extends TestCase
         $queryParameterBag->add($entity);
 
         $request = Mockery::mock(Request::class);
-        $request->shouldReceive('getContent')->andReturn('{}');
+        $request->allows('getContent')->andReturns('{}');
         $request->attributes = $parameterBag;
         $request->query = $queryParameterBag;
-
-        $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
 
         $validator = Mockery::mock(ValidatorInterface::class);
 
@@ -137,17 +96,17 @@ class RestListenerPathConverterTest extends TestCase
             new ConstraintViolation('lastName message', '', [], '', 'last_name', '2'),
         ]);
 
-        $validator->shouldReceive('validate')->andReturn($violationList);
+        $validator->allows('validate')->andReturns($violationList);
 
         $formatDetector = Mockery::mock(FormatDetector::class);
-        $formatDetector->shouldReceive('getRequestFormat')->andReturn('json');
+        $formatDetector->allows('getRequestFormat')->andReturns('json');
 
         $requestMapper = Mockery::mock(NameAwareDenormalizerInterface::class);
-        $requestMapper->shouldReceive('mapToEntity')->andReturn([]);
-        $requestMapper->shouldReceive('getName')->andReturn('name');
+        $requestMapper->allows('mapToEntity')->andReturns([]);
+        $requestMapper->allows('getName')->andReturns('name');
 
         $container = Mockery::mock(ContainerInterface::class);
-        $container->shouldReceive('get')->andReturn($requestMapper);
+        $container->allows('get')->andReturns($requestMapper);
 
         $api = new RestApi($container, new NullLogger());
         $api->dontLogRequest('controller');
@@ -155,8 +114,8 @@ class RestListenerPathConverterTest extends TestCase
         $api->setPropertyPathConverter($pathConverter);
 
         $requestApiResolver = Mockery::mock(RequestApiResolver::class);
-        $requestApiResolver->shouldReceive('getApiForRequest')->andReturn($api);
-        $requestApiResolver->shouldReceive('getApiKeyForRequest')->andReturn($parameterBag->get('api_key'));
+        $requestApiResolver->allows('getApiForRequest')->andReturns($api);
+        $requestApiResolver->allows('getApiKeyForRequest')->andReturns($parameterBag->get('api_key'));
 
         $apiManager = new ApiManager(
             $formatDetector,
@@ -172,7 +131,7 @@ class RestListenerPathConverterTest extends TestCase
         $apiManager->addDecoder(new Json(), 'json');
 
         $parameterToEntityMapBuilder = Mockery::mock(ParameterToEntityMapBuilder::class);
-        $parameterToEntityMapBuilder->shouldReceive('buildParameterToEntityMap')->andReturn([]);
+        $parameterToEntityMapBuilder->allows('buildParameterToEntityMap')->andReturns([]);
 
         return new RestListener(
             $apiManager,
@@ -183,6 +142,54 @@ class RestListenerPathConverterTest extends TestCase
             new ExceptionLogger(),
             $requestApiResolver,
             []
+        );
+    }
+
+    public function testOnKernelControllerWithRequestQueryMapperValidationThrowsExceptionWithNoOpConverter()
+    {
+        $exceptionThrown = false;
+        try {
+            $this->createRestListener(new NoOpConverter())
+                ->onKernelController($this->getControllerEvent());
+            $this->expectException(ApiException::class);
+        } catch (ApiException $apiException) {
+            $exceptionThrown = true;
+            $this->assertEquals(
+                [
+                    'firstName' => ['firstName message'],
+                    'last_name' => ['lastName message'],
+                ],
+                $apiException->getProperties()
+            );
+
+            $this->assertEquals(
+                [
+                    (new Violation())->setField('firstName')->setMessage('firstName message'),
+                    (new Violation())->setField('last_name')->setMessage('lastName message'),
+                ],
+                $apiException->getViolations()
+            );
+        }
+
+        $this->assertTrue($exceptionThrown);
+    }
+
+    private function getControllerEvent(): ControllerEvent
+    {
+        $request = Mockery::mock(Request::class);
+        $request->allows('getContent');
+        $parameterBag = new ParameterBag();
+        $parameterBag->set('_controller', 'controller');
+        $request->attributes = $parameterBag;
+        $queryParameterBag = new ParameterBag();
+        $request->query = $queryParameterBag;
+
+        return new ControllerEvent(
+            Mockery::mock(HttpKernelInterface::class),
+            function () {
+            },
+            $request,
+            HttpKernelInterface::MAIN_REQUEST
         );
     }
 }

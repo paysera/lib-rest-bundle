@@ -2,13 +2,13 @@
 
 namespace Paysera\Bundle\RestBundle\Tests\Security;
 
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\Authentication\Token\AnonymousToken;
 use Paysera\Bundle\RestBundle\Security\RoleAndIpStrategy;
 use Symfony\Component\Security\Core\Role\RoleHierarchy;
 use Symfony\Component\HttpFoundation\Request;
-use PHPUnit_Framework_MockObject_MockObject;
 use Psr\Log\NullLogger;
 
 class RoleAndIpStrategyTest extends TestCase
@@ -33,7 +33,7 @@ class RoleAndIpStrategyTest extends TestCase
 
     public function setUp(): void
     {
-        /** @var TokenStorageInterface|PHPUnit_Framework_MockObject_MockObject $tokenStorageMock */
+        /** @var TokenStorageInterface|MockObject $tokenStorageMock */
         $tokenStorageMock = $this->getMockBuilder(TokenStorageInterface::class)->getMock();
         $tokenStorageMock
             ->expects($this->any())

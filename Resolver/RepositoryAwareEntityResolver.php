@@ -2,7 +2,7 @@
 
 namespace Paysera\Bundle\RestBundle\Resolver;
 
-use Doctrine\Common\Persistence\ObjectRepository;
+use Doctrine\Persistence\ObjectRepository;
 
 class RepositoryAwareEntityResolver implements EntityResolverInterface
 {
