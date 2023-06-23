@@ -7,7 +7,7 @@ This bundle provides means for rapid API development.
 Installation
 ------------
 - Download bundle: `composer require paysera/lib-rest-bundle`
-- Enable bundle: 
+- Enable bundle:
 ```php
 class AppKernel extends Kernel
 {
@@ -42,7 +42,7 @@ class ApiController
 
     public function saveData(Data $data)
     {
-        ...  
+        ...
         return new CustomResponseEntity();
     }
 }
@@ -77,13 +77,13 @@ class ApiController
     <tag name="paysera_rest.api" api_key="my_custom_api_key"/>
     <argument type="service" id="service_container"/>
     <argument type="service" id="logger"/>
-    
+
     <call method="addRequestMapper">
         <argument>app_bundle.normalizer.data</argument>
         <argument>app_bundle.controller.api_controller:saveData</argument>
         <argument>data</argument>
     </call>
-    
+
     <call method="addResponseMapper">
         <argument>app_bundle.normalizer.custom_response</argument>
         <argument>app_bundle.controller.api_controller:saveData</argument>
@@ -92,3 +92,27 @@ class ApiController
 ```
 
 Here `app_bundle.normalizer.data` is a service implementing `\Paysera\Component\Serializer\Normalizer\DenormalizerInterface`, `app_bundle.normalizer.custom_response` is a service implementing `\Paysera\Component\Serializer\Normalizer\NormalizerInterface`. Both of these services must be configured as public in their service definitions.
+
+# Testing
+## php7.4
+```
+docker build -t lib-rest7.4 -f docker/Dockerfile7.4 .
+docker run -it -u $UID -v $PWD:/app -w /app lib-rest7.4 composer i
+docker run -it -u $UID -v $PWD:/app -w /app lib-rest7.4 bin/phpunit
+```
+## php8.0
+```
+docker build -t lib-rest8.0 -f docker/Dockerfile8.0 .
+docker run -it -u $UID -v $PWD:/app -w /app lib-rest8.0 composer i
+docker run -it -u $UID -v $PWD:/app -w /app lib-rest8.0 bin/phpunit
+```
+
+# debugging
+## php7.4
+```
+docker run --add-host=host.docker.internal:host-gateway -e XDEBUG_MODE=debug -it -u $UID -v $PWD:/app -w /app lib-rest7.4 ...
+```
+## php8.0
+```
+docker run --add-host=host.docker.internal:host-gateway -e XDEBUG_MODE=debug -it -u $UID -v $PWD:/app -w /app lib-rest8.0 ...
+```
