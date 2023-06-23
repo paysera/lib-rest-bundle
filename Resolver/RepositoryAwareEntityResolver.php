@@ -2,22 +2,17 @@
 
 namespace Paysera\Bundle\RestBundle\Resolver;
 
-use Doctrine\Common\Persistence\ObjectRepository;
+use Doctrine\Persistence\ObjectRepository;
 
 class RepositoryAwareEntityResolver implements EntityResolverInterface
 {
-    /**
-     * @var ObjectRepository
-     */
-    private $repository;
+    private ObjectRepository $repository;
+    private string $searchField;
 
-    /**
-     * @var string
-     */
-    private $searchField;
-
-    public function __construct(ObjectRepository $repository, $searchField)
-    {
+    public function __construct(
+        ObjectRepository $repository,
+        string $searchField
+    ) {
         $this->repository = $repository;
         $this->searchField = $searchField;
     }
@@ -25,7 +20,9 @@ class RepositoryAwareEntityResolver implements EntityResolverInterface
     public function resolveFrom($value)
     {
         return $this->repository->findOneBy(
-            array($this->searchField => $value)
+            [
+                $this->searchField => $value,
+            ]
         );
     }
 }

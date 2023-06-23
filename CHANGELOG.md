@@ -1,5 +1,16 @@
 # Change Log
 
+## 5.1.0
+### Added
+- Dockerfiles
+- gitignore for `.phpunit.result.cache`
+- Requirement for `doctrine/persistence` as there direct requirement in code at `RepositoryAwareEntityResolver`
+- Test for `RepositoryAwareEntityResolver`
+### Changed
+- Readme
+- `php:^7.1` => `php:^7.4`
+### Removed
+- `phpunit` setting that `phpunit` does not recognize
 ## 5.0.4
 ### Added
 - Added support for PHP 8.0
@@ -36,7 +47,7 @@ Made service `paysera_rest.service.property_path_converter.camel_case_to_snake_c
 - Dropped support for PHP 5, Symfony 2
 - Now requiring Symfony components individually, rather than requiring package `symfony/symfony`
 - Updated PHPUnit and mockery/mockery
-- Removed usage of use deprecated `Symfony\Component\Security\Core\Role\RoleHierarchyInterface`, now using `Symfony\Component\Security\Core\Role\RoleHierarchy`. 
+- Removed usage of use deprecated `Symfony\Component\Security\Core\Role\RoleHierarchyInterface`, now using `Symfony\Component\Security\Core\Role\RoleHierarchy`.
 
 ### Fixed
 - Code style fixes
@@ -69,7 +80,7 @@ Made service `paysera_rest.service.property_path_converter.camel_case_to_snake_c
 - `Paysera\Bundle\RestBundle\RestApi` property `propertyPathConverter` now has default value set to `CamelCaseToSnakeCaseConverter`
 
 ## 3.0.0
-### Changed 
+### Changed
 - `Paysera\Bundle\RestBundle\Entity\Error` all properties are now private instead of protected
 - `Paysera\Bundle\RestBundle\Exception\ApiException` all properties are private instead of protected
 - `Paysera\Bundle\RestBundle\Exception\ApiException` 7th construct argument now is `violation` of type `Violation[]` instead of `codes` of type `string[]`
@@ -81,8 +92,8 @@ Made service `paysera_rest.service.property_path_converter.camel_case_to_snake_c
 
 ## 2.1.0
 ### Changed
-- `_format` route attribute is no longer used to detect Request or Response format. 
-`Content-Type` or `Accept` headers should be used accordingly. 
+- `_format` route attribute is no longer used to detect Request or Response format.
+`Content-Type` or `Accept` headers should be used accordingly.
 
 ## 2.0.3
 ### Deprecated
