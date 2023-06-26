@@ -96,13 +96,13 @@ Here `app_bundle.normalizer.data` is a service implementing `\Paysera\Component\
 # Testing
 ## php7.4
 ```
-docker build -t lib-rest7.4 -f docker/Dockerfile7.4 .
+docker build -t lib-rest7.4 -f docker/Dockerfile_PHP7.4 .
 docker run -it -u $UID -v $PWD:/app -w /app lib-rest7.4 composer i
 docker run -it -u $UID -v $PWD:/app -w /app lib-rest7.4 bin/phpunit
 ```
 ## php8.0
 ```
-docker build -t lib-rest8.0 -f docker/Dockerfile8.0 .
+docker build -t lib-rest8.0 -f docker/Dockerfile_PHP8.0 .
 docker run -it -u $UID -v $PWD:/app -w /app lib-rest8.0 composer i
 docker run -it -u $UID -v $PWD:/app -w /app lib-rest8.0 bin/phpunit
 ```
