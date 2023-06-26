@@ -9,8 +9,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 
 class RepositoryAwareEntityResolverTest extends TestCase
 {
-    private const SEARCH_FIELD = 'field';
-    private const VALUE = 'value';
+    private const KEY_SEARCH_FIELD = 'field';
+    private const VALUE_SEARCH_FIELD = 'value';
 
     private MockObject $objectRepositoryMock;
 
@@ -22,7 +22,7 @@ class RepositoryAwareEntityResolverTest extends TestCase
 
         $this->resolver = new RepositoryAwareEntityResolver(
             $this->objectRepositoryMock,
-            self::SEARCH_FIELD
+            self::KEY_SEARCH_FIELD
         );
     }
 
@@ -34,14 +34,14 @@ class RepositoryAwareEntityResolverTest extends TestCase
             ->method('findOneBy')
             ->with(
                 [
-                    self::SEARCH_FIELD => self::VALUE,
+                    self::KEY_SEARCH_FIELD => self::VALUE_SEARCH_FIELD,
                 ]
             )->willReturn($object)
         ;
 
         $this->assertEquals(
             $object,
-            $this->resolver->resolveFrom(self::VALUE)
+            $this->resolver->resolveFrom(self::VALUE_SEARCH_FIELD)
         );
     }
 }
