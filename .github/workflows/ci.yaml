@@ -1,0 +1,48 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+      - symfony-5-support
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ${{ matrix.operating-system }}
+
+    strategy:
+      matrix:
+        operating-system:
+          - 'ubuntu-latest'
+        php:
+          - '7.4'
+          - '8.0'
+          - '8.1'
+          - '8.2'
+        dependency:
+          - 'highest'
+
+    name: PHP ${{ matrix.php }} with ${{ matrix.dependency }} dependencies tests on ${{ matrix.operating-system }}
+
+    steps:
+      - name: Setup PHP version ${{ matrix.php }} on ${{ matrix.operating-system }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        uses: ramsey/composer-install@v2
+        with:
+          dependency-versions: ${{ matrix.dependency }}
+
+      - name: Run all tests
+        run: composer test

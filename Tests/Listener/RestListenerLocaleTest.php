@@ -13,20 +13,20 @@ use Symfony\Component\HttpFoundation\Request;
 use Paysera\Bundle\RestBundle\Service\RequestLogger;
 use Paysera\Bundle\RestBundle\Listener\RestListener;
 use Paysera\Bundle\RestBundle\Service\ExceptionLogger;
-use Symfony\Component\HttpKernel\Event\GetResponseEvent;
+use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Paysera\Bundle\RestBundle\Service\ParameterToEntityMapBuilder;
 use Paysera\Component\Serializer\Factory\ContextAwareNormalizerFactory;
 
 class RestListenerLocaleTest extends TestCase
 {
     /**
-     * @var MockInterface|GetResponseEvent
+     * @var MockInterface|RequestEvent
      */
-    private $responseEvent;
+    private $requestEvent;
 
     public function setUp(): void
     {
-        $this->responseEvent = Mockery::mock(GetResponseEvent::class);
+        $this->requestEvent = Mockery::mock(RequestEvent::class);
     }
 
     /**
@@ -46,9 +46,9 @@ class RestListenerLocaleTest extends TestCase
             $request->headers->set('Accept-Language', $acceptLanguage);
         }
 
-        $this->responseEvent->shouldReceive('getRequest')->andReturn($request);
+        $this->requestEvent->shouldReceive('getRequest')->andReturn($request);
 
-        $restListener->onKernelRequest($this->responseEvent);
+        $restListener->onKernelRequest($this->requestEvent);
 
         $this->assertEquals($expected, $request->getLocale());
     }

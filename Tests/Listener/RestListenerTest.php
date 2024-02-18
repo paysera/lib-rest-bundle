@@ -22,9 +22,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
-use Symfony\Component\HttpKernel\Event\GetResponseEvent;
-use Symfony\Component\HttpKernel\Event\GetResponseForControllerResultEvent;
+use Symfony\Component\HttpKernel\Event\KernelEvent;
+use Symfony\Component\HttpKernel\Event\ViewEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationList;
@@ -63,9 +62,9 @@ class RestListenerTest extends TestCase
     private $requestLogger;
 
     /**
-     * @var MockInterface|FilterControllerEvent
+     * @var MockInterface|KernelEvent
      */
-    private $filterControllerEvent;
+    private $kernelEvent;
 
     /**
      * @var ExceptionLogger
@@ -94,7 +93,7 @@ class RestListenerTest extends TestCase
 
         $this->requestLogger = Mockery::mock(RequestLogger::class);
 
-        $this->filterControllerEvent = Mockery::mock(FilterControllerEvent::class);
+        $this->kernelEvent = Mockery::mock(KernelEvent::class);
 
         $this->exceptionLogger = Mockery::mock(ExceptionLogger::class);
 
@@ -113,7 +112,7 @@ class RestListenerTest extends TestCase
         $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
         $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(null);
 
-        $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
+        $this->kernelEvent->shouldReceive('getRequest')->andReturn($request);
         $this->apiManager->shouldReceive('getLogger');
         $this->apiManager->shouldReceive('getSecurityStrategy')->andReturnNull();
         $this->apiManager->shouldReceive('getRequestQueryMapper')->andReturnNull();
@@ -123,7 +122,7 @@ class RestListenerTest extends TestCase
 
         $restListener = $this->createRestListener();
 
-        $restListener->onKernelController($this->filterControllerEvent);
+        $restListener->onKernelController($this->kernelEvent);
         $key = key($parameterToEntityMap);
         $this->assertEquals($parameterToEntityMap[$key], $parameterBag->get($key));
     }
@@ -146,7 +145,7 @@ class RestListenerTest extends TestCase
         $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
         $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(null);
 
-        $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
+        $this->kernelEvent->shouldReceive('getRequest')->andReturn($request);
         $this->apiManager->shouldReceive('getLogger');
         $this->apiManager->shouldReceive('getSecurityStrategy')->andReturnNull();
         $this->apiManager->shouldReceive('getRequestQueryMapper')->andReturnNull();
@@ -157,7 +156,7 @@ class RestListenerTest extends TestCase
 
         $restListener = $this->createRestListener();
 
-        $restListener->onKernelController($this->filterControllerEvent);
+        $restListener->onKernelController($this->kernelEvent);
         $key = key($parameterToEntityMap);
         $this->assertEquals($parameterToEntityMap[$key], $parameterBag->get($key));
         $this->assertEquals($entity, $parameterBag->get($name));
@@ -180,7 +179,7 @@ class RestListenerTest extends TestCase
         $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
         $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(null);
 
-        $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
+        $this->kernelEvent->shouldReceive('getRequest')->andReturn($request);
         $this->apiManager->shouldReceive('getLogger');
         $this->apiManager->shouldReceive('getSecurityStrategy')->andReturnNull();
         $this->apiManager->shouldReceive('getDecoder')->andThrow(EncodingException::class);
@@ -192,7 +191,7 @@ class RestListenerTest extends TestCase
 
         $restListener = $this->createRestListener();
 
-        $restListener->onKernelController($this->filterControllerEvent);
+        $restListener->onKernelController($this->kernelEvent);
     }
 
     public function testOnKernelControllerWithRequestMapperWhenMappingFails()
@@ -212,7 +211,7 @@ class RestListenerTest extends TestCase
         $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
         $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(null);
 
-        $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
+        $this->kernelEvent->shouldReceive('getRequest')->andReturn($request);
         $this->apiManager->shouldReceive('getLogger');
         $this->apiManager->shouldReceive('getSecurityStrategy')->andReturnNull();
         $this->apiManager->shouldReceive('getRequestQueryMapper')->andReturnNull();
@@ -223,7 +222,7 @@ class RestListenerTest extends TestCase
 
         $restListener = $this->createRestListener();
 
-        $restListener->onKernelController($this->filterControllerEvent);
+        $restListener->onKernelController($this->kernelEvent);
     }
 
     public function testOnKernelControllerWithRequestMapperWhenMappingSucceedsWithoutValidation()
@@ -244,7 +243,7 @@ class RestListenerTest extends TestCase
         $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
         $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(null);
 
-        $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
+        $this->kernelEvent->shouldReceive('getRequest')->andReturn($request);
         $this->apiManager->shouldReceive('getLogger');
         $this->apiManager->shouldReceive('getSecurityStrategy')->andReturnNull();
         $this->apiManager->shouldReceive('getRequestQueryMapper')->andReturnNull();
@@ -255,7 +254,7 @@ class RestListenerTest extends TestCase
 
         $restListener = $this->createRestListener();
 
-        $restListener->onKernelController($this->filterControllerEvent);
+        $restListener->onKernelController($this->kernelEvent);
         $this->assertEquals($entity, $parameterBag->get($name));
     }
 
@@ -277,7 +276,7 @@ class RestListenerTest extends TestCase
         $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
         $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(null);
 
-        $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
+        $this->kernelEvent->shouldReceive('getRequest')->andReturn($request);
         $this->apiManager->shouldReceive('getLogger');
         $this->apiManager->shouldReceive('getSecurityStrategy')->andReturnNull();
         $this->apiManager->shouldReceive('getRequestQueryMapper')->andReturnNull();
@@ -294,7 +293,7 @@ class RestListenerTest extends TestCase
 
         $restListener = $this->createRestListener();
 
-        $restListener->onKernelController($this->filterControllerEvent);
+        $restListener->onKernelController($this->kernelEvent);
         $this->assertEquals($entity, $parameterBag->get($name));
     }
 
@@ -317,7 +316,7 @@ class RestListenerTest extends TestCase
         $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
         $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(null);
 
-        $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
+        $this->kernelEvent->shouldReceive('getRequest')->andReturn($request);
         $this->apiManager->shouldReceive('getLogger');
         $this->apiManager->shouldReceive('getSecurityStrategy')->andReturnNull();
         $this->apiManager->shouldReceive('getRequestQueryMapper')->andReturnNull();
@@ -333,7 +332,7 @@ class RestListenerTest extends TestCase
 
         $restListener = $this->createRestListener();
 
-        $restListener->onKernelController($this->filterControllerEvent);
+        $restListener->onKernelController($this->kernelEvent);
         $this->assertEquals($entity, $parameterBag->get($name));
     }
 
@@ -356,7 +355,7 @@ class RestListenerTest extends TestCase
         $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
         $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(null);
 
-        $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
+        $this->kernelEvent->shouldReceive('getRequest')->andReturn($request);
         $this->apiManager->shouldReceive('getLogger');
         $this->apiManager->shouldReceive('getSecurityStrategy')->andReturnNull();
         $this->apiManager->shouldReceive('getRequestQueryMapper')->andReturn($requestMapper);
@@ -367,7 +366,7 @@ class RestListenerTest extends TestCase
 
         $restListener = $this->createRestListener();
 
-        $restListener->onKernelController($this->filterControllerEvent);
+        $restListener->onKernelController($this->kernelEvent);
     }
 
     public function testOnKernelControllerWithRequestQueryMapperValidationThrowsException()
@@ -391,7 +390,7 @@ class RestListenerTest extends TestCase
         $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
         $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(null);
 
-        $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
+        $this->kernelEvent->shouldReceive('getRequest')->andReturn($request);
         $this->apiManager->shouldReceive('getLogger');
         $this->apiManager->shouldReceive('getSecurityStrategy')->andReturnNull();
         $this->apiManager->shouldReceive('getRequestQueryMapper')->andReturn($requestMapper);
@@ -407,7 +406,7 @@ class RestListenerTest extends TestCase
 
         $restListener = $this->createRestListener();
 
-        $restListener->onKernelController($this->filterControllerEvent);
+        $restListener->onKernelController($this->kernelEvent);
         $this->assertEquals($entity, $parameterBag->get($name));
     }
 
@@ -431,7 +430,7 @@ class RestListenerTest extends TestCase
         $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
         $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(null);
 
-        $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
+        $this->kernelEvent->shouldReceive('getRequest')->andReturn($request);
         $this->apiManager->shouldReceive('getLogger');
         $this->apiManager->shouldReceive('getSecurityStrategy')->andReturnNull();
         $this->apiManager->shouldReceive('getRequestQueryMapper')->andReturn($requestMapper);
@@ -448,7 +447,7 @@ class RestListenerTest extends TestCase
 
         $restListener = $this->createRestListener();
 
-        $restListener->onKernelController($this->filterControllerEvent);
+        $restListener->onKernelController($this->kernelEvent);
         $this->assertEquals($entity, $parameterBag->get($name));
     }
 
@@ -475,7 +474,7 @@ class RestListenerTest extends TestCase
         $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
         $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(null);
 
-        $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
+        $this->kernelEvent->shouldReceive('getRequest')->andReturn($request);
         $this->apiManager->shouldReceive('getLogger');
         $this->apiManager->shouldReceive('getSecurityStrategy')->andReturnNull();
         $this->apiManager->shouldReceive('getRequestQueryMapper')->andReturn($requestMapper);
@@ -502,7 +501,7 @@ class RestListenerTest extends TestCase
 
         $exceptionThrowed = false;
         try {
-            $restListener->onKernelController($this->filterControllerEvent);
+            $restListener->onKernelController($this->kernelEvent);
         } catch (ApiException $apiException) {
             $exceptionThrowed = true;
             $this->assertEquals(
@@ -542,7 +541,7 @@ class RestListenerTest extends TestCase
         $httpKernelMock = Mockery::mock(HttpKernelInterface::class);
         $requestMock = Mockery::mock(Request::class);
 
-        $event = new GetResponseForControllerResultEvent(
+        $event = new ViewEvent(
             $httpKernelMock,
             $requestMock,
             HttpKernelInterface::MASTER_REQUEST,
