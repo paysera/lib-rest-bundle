@@ -4,10 +4,10 @@ on:
   push:
     branches:
       - master
+      - symfony-5-support
   pull_request:
     branches:
       - master
-      - symfony-5-support
 
 permissions:
   contents: read
