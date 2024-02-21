@@ -4,7 +4,6 @@ namespace Paysera\Bundle\RestBundle\Listener;
 
 use Exception;
 use Paysera\Bundle\RestBundle\Cache\ResponseAwareCacheStrategy;
-use Paysera\Bundle\RestBundle\Exception\FatalThrowableError;
 use Paysera\Bundle\RestBundle\Service\ExceptionLogger;
 use Paysera\Bundle\RestBundle\Service\ParameterToEntityMapBuilder;
 use Paysera\Bundle\RestBundle\Service\RequestApiResolver;
@@ -246,11 +245,16 @@ class RestListener
      */
     public function onKernelException(ExceptionEvent $event)
     {
+        if (!$event->getThrowable() instanceof Exception) {
+            return;
+        }
+
         /** @var $request Request */
         $request = $event->getRequest();
         $logger = $this->getLogger($request);
 
-        $exception = new FatalThrowableError($event->getThrowable());
+        /** @var Exception $exception */
+        $exception = $event->getThrowable();
 
         $logger->debug('Handling kernel.exception', array($event));
         $logger->debug($exception);
