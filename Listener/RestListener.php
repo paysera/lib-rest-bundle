@@ -253,10 +253,11 @@ class RestListener
         $request = $event->getRequest();
         $logger = $this->getLogger($request);
 
+        $logger->debug('Handling kernel.exception', array($event));
+
         /** @var Exception $exception */
         $exception = $event->getThrowable();
 
-        $logger->debug('Handling kernel.exception', array($event));
         $logger->debug($exception);
 
         $response = $this->apiManager->getResponseForException($request, $exception);
