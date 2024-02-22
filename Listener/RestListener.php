@@ -17,11 +17,11 @@ use Paysera\Bundle\RestBundle\Exception\ApiException;
 use Paysera\Component\Serializer\Exception\EncodingException;
 use Paysera\Bundle\RestBundle\ApiManager;
 use Paysera\Bundle\RestBundle\Service\RequestLogger;
-use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
-use Symfony\Component\HttpKernel\Event\GetResponseEvent;
-use Symfony\Component\HttpKernel\Event\GetResponseForControllerResultEvent;
+use Symfony\Component\HttpKernel\Event\KernelEvent;
+use Symfony\Component\HttpKernel\Event\RequestEvent;
+use Symfony\Component\HttpKernel\Event\ViewEvent;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent;
+use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Psr\Log\LoggerInterface;
 
 class RestListener
@@ -64,7 +64,7 @@ class RestListener
         $this->loggersCache = array();
     }
 
-    public function onKernelRequest(GetResponseEvent $event)
+    public function onKernelRequest(RequestEvent $event)
     {
         $request = $event->getRequest();
 
@@ -92,13 +92,13 @@ class RestListener
     /**
      * Ran on kernel.controller event
      *
-     * @param FilterControllerEvent $event
+     * @param KernelEvent $event
      *
      * @throws ApiException
      * @throws InvalidDataException
      * @throws Exception
      */
-    public function onKernelController(FilterControllerEvent $event)
+    public function onKernelController(KernelEvent $event)
     {
         /** @var $request Request */
         $request = $event->getRequest();
@@ -131,9 +131,9 @@ class RestListener
     /**
      * Ran on kernel.view event
      *
-     * @param GetResponseForControllerResultEvent $event
+     * @param ViewEvent $event
      */
-    public function onKernelView(GetResponseForControllerResultEvent $event)
+    public function onKernelView(ViewEvent $event)
     {
         /** @var $request Request */
         $request = $event->getRequest();
@@ -228,6 +228,10 @@ class RestListener
 
         $response->setContent($responseContent);
 
+        if ($responseContent === null) {
+            $responseContent = '';
+        }
+
         $response->setEtag($etag === null ? hash('sha256', $responseContent) : $etag);
         $response->headers->set('X-Frame-Options', 'DENY');
 
@@ -237,22 +241,29 @@ class RestListener
     /**
      * Ran on kernel.exception event
      *
-     * @param GetResponseForExceptionEvent $event
+     * @param ExceptionEvent $event
      */
-    public function onKernelException(GetResponseForExceptionEvent $event)
+    public function onKernelException(ExceptionEvent $event)
     {
+        if (!$event->getThrowable() instanceof Exception) {
+            return;
+        }
+
         /** @var $request Request */
         $request = $event->getRequest();
         $logger = $this->getLogger($request);
 
         $logger->debug('Handling kernel.exception', array($event));
-        $logger->debug($event->getException());
 
-        $response = $this->apiManager->getResponseForException($request, $event->getException());
+        /** @var Exception $exception */
+        $exception = $event->getThrowable();
+
+        $logger->debug($exception);
+
+        $response = $this->apiManager->getResponseForException($request, $exception);
         if ($response !== null) {
             $event->setResponse($response);
             $logger->debug('Setting error response', array($response->getContent()));
-            $exception = $event->getException();
 
             $this->exceptionLogger->log($logger, $response, $exception);
         }

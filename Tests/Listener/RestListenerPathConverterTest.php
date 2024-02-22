@@ -28,7 +28,7 @@ use Psr\Log\NullLogger;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
+use Symfony\Component\HttpKernel\Event\KernelEvent;
 use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -36,13 +36,13 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 class RestListenerPathConverterTest extends TestCase
 {
     /**
-     * @var MockInterface|FilterControllerEvent
+     * @var MockInterface|KernelEvent
      */
-    private $filterControllerEvent;
+    private $kernelEvent;
 
     public function setUp(): void
     {
-        $this->filterControllerEvent = Mockery::mock(FilterControllerEvent::class);
+        $this->kernelEvent = Mockery::mock(KernelEvent::class);
     }
 
     public function testOnKernelControllerWithRequestQueryMapperValidationThrowsExceptionWithCamelCasePathConverter()
@@ -51,7 +51,7 @@ class RestListenerPathConverterTest extends TestCase
         try {
             $this
                 ->createRestListener(new CamelCaseToSnakeCaseConverter())
-                ->onKernelController($this->filterControllerEvent)
+                ->onKernelController($this->kernelEvent)
             ;
         } catch (ApiException $apiException) {
             $exceptionThrown = true;
@@ -79,7 +79,7 @@ class RestListenerPathConverterTest extends TestCase
     {
         $exceptionThrown = false;
         try {
-            $this->createRestListener(new NoOpConverter())->onKernelController($this->filterControllerEvent);
+            $this->createRestListener(new NoOpConverter())->onKernelController($this->kernelEvent);
             $this->expectException(ApiException::class);
         } catch (ApiException $apiException) {
             $exceptionThrown = true;
@@ -128,7 +128,7 @@ class RestListenerPathConverterTest extends TestCase
         $request->attributes = $parameterBag;
         $request->query = $queryParameterBag;
 
-        $this->filterControllerEvent->shouldReceive('getRequest')->andReturn($request);
+        $this->kernelEvent->shouldReceive('getRequest')->andReturn($request);
 
         $validator = Mockery::mock(ValidatorInterface::class);
 

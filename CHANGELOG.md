@@ -1,5 +1,12 @@
 # Change Log
 
+## 5.1.1
+### Added
+- Support for PHP >=7.4
+- Support for Symfony 5.X
+### Removed
+- Support for Symfony 3.X
+
 ## 5.1.0
 ### Added
 - Dockerfiles

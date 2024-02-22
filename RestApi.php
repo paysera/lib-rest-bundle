@@ -640,6 +640,9 @@ class RestApi
      */
     protected function normalizeControllerKey($controllerKey)
     {
+        if ($controllerKey === null) {
+            return null;
+        }
         $i = strpos($controllerKey, '\\Controller\\');
         if ($i !== false) {
             $controllerKey = substr($controllerKey, $i + 12);
