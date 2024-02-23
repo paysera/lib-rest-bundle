@@ -1,5 +1,9 @@
 # Change Log
 
+## 5.1.2
+### Added
+- Added `Locked` when HTTP Lock status occur at `ApiException`
+
 ## 5.1.1
 ### Added
 - Support for PHP >=7.4
