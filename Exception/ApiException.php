@@ -19,6 +19,8 @@ class ApiException extends Exception
     const INTERNAL_SERVER_ERROR = 'internal_server_error';
     const NOT_ACCEPTABLE = 'not_acceptable';
 
+    public const LOCKED = 'locked';
+
     /**
      * @var string
      */
