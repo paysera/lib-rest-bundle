@@ -16,6 +16,7 @@ jobs:
     runs-on: ${{ matrix.operating-system }}
 
     strategy:
+      fail-fast: false
       matrix:
         operating-system:
           - 'ubuntu-latest'
@@ -24,24 +25,53 @@ jobs:
           - '8.0'
           - '8.1'
           - '8.2'
+          - '8.3'
+          - '8.4'
+        symfony:
+          - '4.*'
+          - '5.*'
+          - '6.*'
         dependency:
+          - 'lowest'
           - 'highest'
 
-    name: PHP ${{ matrix.php }} with ${{ matrix.dependency }} dependencies tests on ${{ matrix.operating-system }}
+        # Exclude invalid combinations
+        exclude:
+          # Symfony 4.* only supports PHP up to 8.2
+          - php: '8.3'
+            symfony: '4.*'
+          - php: '8.4'
+            symfony: '4.*'
+
+          # Symfony 5.* only supports PHP up to 8.3
+          - php: '8.4'
+            symfony: '5.*'
+
+          # Symfony 6.* requires PHP >= 8.1
+          - php: '7.4'
+            symfony: '6.*'
+          - php: '8.0'
+            symfony: '6.*'
+
+    name: PHP ${{ matrix.php }} with Symfony ${{ matrix.symfony }} (${{ matrix.dependency }} dependencies) on ${{ matrix.operating-system }}
 
     steps:
       - name: Setup PHP version ${{ matrix.php }} on ${{ matrix.operating-system }}
         uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php-versions }}
+          php-version: ${{ matrix.php }}
+          tools: flex
 
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install dependencies
         uses: ramsey/composer-install@v2
+        env:
+          SYMFONY_REQUIRE: ${{ matrix.symfony }}
         with:
           dependency-versions: ${{ matrix.dependency }}
+          composer-options: "--no-audit"
 
       - name: Run all tests
         run: composer test

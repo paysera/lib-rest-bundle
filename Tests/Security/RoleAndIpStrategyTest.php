@@ -5,10 +5,12 @@ namespace Paysera\Bundle\RestBundle\Tests\Security;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\Authentication\Token\AnonymousToken;
+use Symfony\Component\Security\Core\User\InMemoryUser;
+use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
 use Paysera\Bundle\RestBundle\Security\RoleAndIpStrategy;
 use Symfony\Component\Security\Core\Role\RoleHierarchy;
 use Symfony\Component\HttpFoundation\Request;
-use PHPUnit_Framework_MockObject_MockObject;
+use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Log\NullLogger;
 
 class RoleAndIpStrategyTest extends TestCase
@@ -33,12 +35,25 @@ class RoleAndIpStrategyTest extends TestCase
 
     public function setUp(): void
     {
-        /** @var TokenStorageInterface|PHPUnit_Framework_MockObject_MockObject $tokenStorageMock */
+        /** @var TokenStorageInterface|MockObject $tokenStorageMock */
         $tokenStorageMock = $this->getMockBuilder(TokenStorageInterface::class)->getMock();
+
+        if (class_exists(InMemoryUser::class)) {
+            // Symfony 5.3+, 6.x (InMemoryUser introduced in 5.3)
+            $token = new UsernamePasswordToken(
+                new InMemoryUser('user', 'password', ['ROLE_ADMIN', 'ROLE_FEATURE_MANAGER']),
+                'firewall',
+                ['ROLE_ADMIN', 'ROLE_FEATURE_MANAGER']
+            );
+        } else {
+            // Symfony 4.x
+            $token = new AnonymousToken('secret', 'user', ['ROLE_ADMIN', 'ROLE_FEATURE_MANAGER']);
+        }
+
         $tokenStorageMock
             ->expects($this->any())
             ->method('getToken')
-            ->willReturn(new AnonymousToken('secret', 'user', ['ROLE_ADMIN', 'ROLE_FEATURE_MANAGER']))
+            ->willReturn($token)
         ;
 
         $this->strategy = new RoleAndIpStrategy(

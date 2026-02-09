@@ -57,7 +57,7 @@ class ApiException extends Exception
         $errorCode,
         $message = null,
         $statusCode = 0,
-        Exception $previous = null,
+        ?Exception $previous = null,
         $properties = null,
         $data = null,
         array $violations = []
