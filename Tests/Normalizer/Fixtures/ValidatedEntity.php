@@ -9,15 +9,9 @@ use Symfony\Component\Validator\Mapping\ClassMetadata;
 
 class ValidatedEntity
 {
-    /**
-     * @var string
-     */
-    public $name;
+    public string $name;
 
-    /**
-     * @var string
-     */
-    public $code;
+    public string $code;
 
     public function __construct(string $name, string $code)
     {

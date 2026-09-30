@@ -31,7 +31,7 @@ class ValidatorAwareDenormalizerTest extends TestCase
             }
         };
         $denormalizer->setValidator(
-            Validation::createValidatorBuilder()->addMethodMapping('loadValidatorMetadata')->getValidator()
+            Validation::createValidatorBuilder()->addMethodMapping('loadValidatorMetadata')->getValidator(),
         );
 
         $error = null;

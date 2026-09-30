@@ -32,9 +32,9 @@ class PayseraRestExtensionTest extends TestCase
         $this->assertSame($expected, [
             'definitions' => array_map(
                 function (Definition $definition): array {
-                    return self::dumpDefinition($definition, false);
+                    return $this->dumpDefinition($definition, false);
                 },
-                $definitions
+                $definitions,
             ),
             'aliases' => array_keys(array_diff_key($container->getAliases(), $empty->getAliases())),
             'parameters' => $container->getParameterBag()->all(),
@@ -84,7 +84,7 @@ class PayseraRestExtensionTest extends TestCase
     /**
      * @return array<string, mixed>
      */
-    private static function dumpDefinition(Definition $definition, bool $inline): array
+    private function dumpDefinition(Definition $definition, bool $inline): array
     {
         return array_filter(
             [
@@ -98,17 +98,17 @@ class PayseraRestExtensionTest extends TestCase
                 'autowired' => $definition->isAutowired() ?: null,
                 'autoconfigured' => $definition->isAutoconfigured() ?: null,
                 'deprecated' => $definition->isDeprecated() ?: null,
-                'factory' => self::export($definition->getFactory()),
-                'arguments' => self::export($definition->getArguments()),
-                'calls' => self::export($definition->getMethodCalls()),
-                'properties' => self::export($definition->getProperties()),
-                'configurator' => self::export($definition->getConfigurator()),
+                'factory' => $this->export($definition->getFactory()),
+                'arguments' => $this->export($definition->getArguments()),
+                'calls' => $this->export($definition->getMethodCalls()),
+                'properties' => $this->export($definition->getProperties()),
+                'configurator' => $this->export($definition->getConfigurator()),
                 'tags' => $definition->getTags(),
                 'decorated' => $definition->getDecoratedService(),
             ],
             function ($value): bool {
                 return $value !== null && $value !== [];
-            }
+            },
         );
     }
 
@@ -116,16 +116,16 @@ class PayseraRestExtensionTest extends TestCase
      * @param mixed $value
      * @return mixed
      */
-    private static function export($value)
+    private function export($value)
     {
         if ($value instanceof Reference) {
             return ['reference' => (string) $value, 'invalid_behavior' => $value->getInvalidBehavior()];
         }
         if ($value instanceof Definition) {
-            return ['inline' => self::dumpDefinition($value, true)];
+            return ['inline' => $this->dumpDefinition($value, true)];
         }
         if (is_array($value)) {
-            return array_map([self::class, 'export'], $value);
+            return array_map([$this, 'export'], $value);
         }
 
         return $value;

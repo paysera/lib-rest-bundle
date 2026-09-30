@@ -21,7 +21,7 @@ class PayseraRestBundleTest extends TestCase
             $container->getCompilerPassConfig()->getBeforeOptimizationPasses(),
             function ($pass): bool {
                 return $pass instanceof ApiCompilerPass;
-            }
+            },
         ));
         $this->assertEquals([new ApiCompilerPass()], $passes);
     }

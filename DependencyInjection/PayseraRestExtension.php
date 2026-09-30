@@ -6,6 +6,7 @@ use JsonpCallbackValidator;
 use Paysera\Bundle\RestBundle\ApiManager;
 use Paysera\Bundle\RestBundle\Cache\DefaultCacheStrategy;
 use Paysera\Bundle\RestBundle\Entity\ErrorConfig;
+use Paysera\Bundle\RestBundle\Exception\ApiException;
 use Paysera\Bundle\RestBundle\Listener\RestListener;
 use Paysera\Bundle\RestBundle\ModificationDateProvider\CollectionDateProvider;
 use Paysera\Bundle\RestBundle\Normalizer\ErrorNormalizer;
@@ -39,8 +40,8 @@ use Paysera\Component\Serializer\Validation\PropertiesAwareValidator;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
-use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\DependencyInjection\Extension\Extension;
+use Symfony\Component\DependencyInjection\Reference;
 
 /**
  * This is the class that loads and manages your bundle configuration
@@ -92,7 +93,7 @@ class PayseraRestExtension extends Extension
                 ->setAbstract(true)
                 ->setArguments(['items']),
             'paysera_rest.normalizer.result_metadata' => $this->createPublicDefinition(
-                ResultMetadataNormalizer::class
+                ResultMetadataNormalizer::class,
             ),
             'paysera_rest.normalizer.plain' => $this->createPublicDefinition(PlainNormalizer::class),
             'paysera_rest.normalizer.jsonp_params' => $this->createPublicDefinition(JsonpParamsQueryNormalizer::class),
@@ -167,7 +168,7 @@ class PayseraRestExtension extends Extension
             'paysera_rest.encoding.plain_text' => $this->createEncodingDefinition(
                 Plain::class,
                 'txt',
-                'createPlainTextEncoder'
+                'createPlainTextEncoder',
             ),
             'paysera_rest.encoding.jsonp_factory' => $this->createPublicDefinition(JsonpEncoderFactory::class, [
                 new Reference('paysera_rest.encoding.json'),
@@ -177,7 +178,7 @@ class PayseraRestExtension extends Extension
                 ->setAbstract(true),
             'paysera_rest.default_cache_strategy' => $this->createPublicDefinition(DefaultCacheStrategy::class),
             'paysera_rest.modification_date_provider.collection' => $this->createPublicDefinition(
-                CollectionDateProvider::class
+                CollectionDateProvider::class,
             )
                 ->setAbstract(true),
             'paysera_rest.serializer.fields_parser' => (new Definition(FieldsParser::class))->setPublic(false),
@@ -185,26 +186,26 @@ class PayseraRestExtension extends Extension
                 ->setPublic(false),
             'paysera_rest.serializer.context_aware_normalizer_factory' => $this->createPublicDefinition(
                 ContextAwareNormalizerFactory::class,
-                [$fieldsParser, new Reference('paysera_rest.serializer.fields_filter')]
+                [$fieldsParser, new Reference('paysera_rest.serializer.fields_filter')],
             ),
             'paysera_rest.serializer.distributed_normalizer' => $this->createPublicDefinition(
-                DistributedNormalizer::class
+                DistributedNormalizer::class,
             )
                 ->setAbstract(true)
                 ->setFactory([new Reference('paysera_rest.serializer.context_aware_normalizer_factory'), 'create']),
             'paysera_rest.serializer.validation.properties_aware_validator' => $this->createPublicDefinition(
                 PropertiesAwareValidator::class,
-                [new Reference('validator')]
+                [new Reference('validator')],
             ),
             'paysera_rest.service.parameter_to_entity_map_builder' => $this->createPublicDefinition(
                 ParameterToEntityMapBuilder::class,
-                [$logger, new Reference('paysera_rest.api_manager')]
+                [$logger, new Reference('paysera_rest.api_manager')],
             ),
             'paysera_rest.service.property_path_converter.no_op_converter' => $this->createPublicDefinition(
-                NoOpConverter::class
+                NoOpConverter::class,
             ),
             'paysera_rest.service.property_path_converter.camel_case_to_snake_case' => $this->createPublicDefinition(
-                CamelCaseToSnakeCaseConverter::class
+                CamelCaseToSnakeCaseConverter::class,
             ),
             'paysera_rest.security_strategy.role_and_ip' => $this->createPublicDefinition(RoleAndIpStrategy::class, [
                 new Reference('security.role_hierarchy'),
@@ -215,7 +216,7 @@ class PayseraRestExtension extends Extension
             'paysera_rest.service.rest_api_registry' => $this->createPublicDefinition(RestApiRegistry::class)
                 ->setLazy(true),
             'paysera_rest.service.request_api_key_resolver' => $this->createPublicDefinition(
-                RequestApiKeyResolver::class
+                RequestApiKeyResolver::class,
             ),
             'paysera_rest.service.request_api_resolver' => $this->createPublicDefinition(RequestApiResolver::class, [
                 new Reference('paysera_rest.service.rest_api_registry'),
@@ -228,14 +229,14 @@ class PayseraRestExtension extends Extension
     {
         $definition = $this->createPublicDefinition(ErrorConfig::class);
         $errors = [
-            ['invalid_request', 400, 'Request content is invalid'],
-            ['invalid_parameters', 400, 'Some required parameter is missing or it\'s format is invalid'],
-            ['invalid_state', 409, 'Requested action cannot be made to the current state of resource'],
-            ['unauthorized', 401, 'You have not provided any credentials or they are invalid'],
-            ['forbidden', 403, 'You have no rights to access requested resource or make requested action'],
-            ['not_found', 404, 'Resource was not found'],
-            ['internal_server_error', 500, 'Unexpected internal system error'],
-            ['not_acceptable', 406, 'Unknown request or response format'],
+            [ApiException::INVALID_REQUEST, 400, 'Request content is invalid'],
+            [ApiException::INVALID_PARAMETERS, 400, 'Some required parameter is missing or it\'s format is invalid'],
+            [ApiException::INVALID_STATE, 409, 'Requested action cannot be made to the current state of resource'],
+            [ApiException::UNAUTHORIZED, 401, 'You have not provided any credentials or they are invalid'],
+            [ApiException::FORBIDDEN, 403, 'You have no rights to access requested resource or make requested action'],
+            [ApiException::NOT_FOUND, 404, 'Resource was not found'],
+            [ApiException::INTERNAL_SERVER_ERROR, 500, 'Unexpected internal system error'],
+            [ApiException::NOT_ACCEPTABLE, 406, 'Unknown request or response format'],
         ];
         foreach ($errors as $error) {
             $definition->addMethodCall('configure', $error);

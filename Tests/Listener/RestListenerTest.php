@@ -544,7 +544,7 @@ class RestListenerTest extends TestCase
         $event = new ViewEvent(
             $httpKernelMock,
             $requestMock,
-            self::getMainRequestType(),
+            $this->getMainRequestType(),
             null
         );
 
@@ -557,7 +557,7 @@ class RestListenerTest extends TestCase
         $this->assertEquals('DENY', $responseHeaders->get($headerName));
     }
 
-    private static function getMainRequestType(): int
+    private function getMainRequestType(): int
     {
         if (defined(HttpKernelInterface::class . '::MAIN_REQUEST')) {
             return HttpKernelInterface::MAIN_REQUEST;

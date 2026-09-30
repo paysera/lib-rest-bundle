@@ -7,11 +7,11 @@
 - The services are defined in `PayseraRestExtension` instead of `Resources/config/services.xml` and the two files it
   imported, which are removed, so Symfony 7.4 no longer reports that the XML configuration format is deprecated. The
   service ids, classes, arguments, method calls, tags and visibility are unchanged
-- Breaking for subclasses that override `Configuration::getConfigTreeBuilder()`: it declares `: TreeBuilder`, which
+- **BREAKING** for subclasses that override `Configuration::getConfigTreeBuilder()`: it declares `: TreeBuilder`, which
   Symfony 7 requires, so the override must declare it too
-- Breaking for subclasses that override `PayseraRestBundle::build()`, `PayseraRestExtension::load()` or
+- **BREAKING** for subclasses that override `PayseraRestBundle::build()`, `PayseraRestExtension::load()` or
   `ApiCompilerPass::process()`: they declare `: void`, so the override must declare it too
-- Breaking for subclasses of `PayseraRestExtension` that call `addAnnotatedClassesToCompile()` or
+- **BREAKING** for subclasses of `PayseraRestExtension` that call `addAnnotatedClassesToCompile()` or
   `getAnnotatedClassesToCompile()`: the extension extends `Symfony\Component\DependencyInjection\Extension\Extension`
   instead of HttpKernel's `Extension`, which is internal since Symfony 7.1 and is the only one of the two that has those
   methods; Symfony has deprecated both, so drop the calls
