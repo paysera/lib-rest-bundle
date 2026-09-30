@@ -37,20 +37,8 @@ jobs:
 
         # Exclude invalid combinations
         exclude:
-          # Symfony 4.* only supports PHP up to 8.2
-          - php: '8.3'
-            symfony: '4.*'
-          - php: '8.4'
-            symfony: '4.*'
-
-          # Symfony 5.* only supports PHP up to 8.3
-          - php: '8.4'
-            symfony: '5.*'
-
-          # Symfony 6.* requires PHP >= 8.1
+          # Symfony 6.* requires PHP >= 8.0.2
           - php: '7.4'
-            symfony: '6.*'
-          - php: '8.0'
             symfony: '6.*'
 
     name: PHP ${{ matrix.php }} with Symfony ${{ matrix.symfony }} (${{ matrix.dependency }} dependencies) on ${{ matrix.operating-system }}
