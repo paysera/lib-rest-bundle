@@ -345,7 +345,7 @@ class RestListenerTest extends TestCase
         $parameterBag = new ParameterBag();
         $parameterBag->set('_controller', 'controller');
         $request->attributes = $parameterBag;
-        $queryParameterBag = new ParameterBag();
+        $queryParameterBag = (new Request())->query;
         $request->query = $queryParameterBag;
 
         $requestMapper = Mockery::mock(NameAwareDenormalizerInterface::class);
@@ -380,7 +380,7 @@ class RestListenerTest extends TestCase
         $parameterBag = new ParameterBag();
         $parameterBag->set('_controller', 'controller');
         $request->attributes = $parameterBag;
-        $queryParameterBag = new ParameterBag();
+        $queryParameterBag = (new Request())->query;
         $request->query = $queryParameterBag;
 
         $requestMapper = Mockery::mock(NameAwareDenormalizerInterface::class);
@@ -420,7 +420,7 @@ class RestListenerTest extends TestCase
         $parameterBag = new ParameterBag();
         $parameterBag->set('_controller', 'controller');
         $request->attributes = $parameterBag;
-        $queryParameterBag = new ParameterBag();
+        $queryParameterBag = (new Request())->query;
         $request->query = $queryParameterBag;
 
         $requestMapper = Mockery::mock(NameAwareDenormalizerInterface::class);
@@ -464,7 +464,7 @@ class RestListenerTest extends TestCase
         $parameterBag = new ParameterBag();
         $parameterBag->set('_controller', 'controller');
         $request->attributes = $parameterBag;
-        $queryParameterBag = new ParameterBag();
+        $queryParameterBag = (new Request())->query;
         $request->query = $queryParameterBag;
 
         $requestMapper = Mockery::mock(NameAwareDenormalizerInterface::class);
@@ -544,7 +544,7 @@ class RestListenerTest extends TestCase
         $event = new ViewEvent(
             $httpKernelMock,
             $requestMock,
-            HttpKernelInterface::MASTER_REQUEST,
+            self::getMainRequestType(),
             null
         );
 
@@ -555,6 +555,15 @@ class RestListenerTest extends TestCase
 
         $this->assertTrue($responseHeaders->has($headerName));
         $this->assertEquals('DENY', $responseHeaders->get($headerName));
+    }
+
+    private static function getMainRequestType(): int
+    {
+        if (defined(HttpKernelInterface::class . '::MAIN_REQUEST')) {
+            return HttpKernelInterface::MAIN_REQUEST;
+        }
+
+        return HttpKernelInterface::MASTER_REQUEST;
     }
 
     private function storeLoggerMessage()
