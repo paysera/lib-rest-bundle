@@ -33,7 +33,7 @@ abstract class ValidatorAwareDenormalizer extends BaseDenormalizer
      * @param array|null $groups
      * @throws InvalidDataException
      */
-    protected function validate($entity, array $groups = null)
+    protected function validate($entity, ?array $groups = null)
     {
         if ($this->validator === null) {
             throw new RuntimeException('No validator was set to mapper');
