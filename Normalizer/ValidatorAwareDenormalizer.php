@@ -30,7 +30,7 @@ abstract class ValidatorAwareDenormalizer extends BaseDenormalizer
      *
      * @param object $entity
      *
-     * @param array|null $groups
+     * @param string[]|null $groups
      * @throws InvalidDataException
      */
     protected function validate($entity, ?array $groups = null)

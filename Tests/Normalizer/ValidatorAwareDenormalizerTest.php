@@ -57,6 +57,11 @@ class ValidatorAwareDenormalizerTest extends TestCase
                 null,
                 [$blank, ['name' => [$blank]]],
             ],
+            'an empty list of groups: the Default group' => [
+                new ValidatedEntity('', ''),
+                [],
+                [$blank, ['name' => [$blank]]],
+            ],
             'one group' => [
                 new ValidatedEntity('', ''),
                 ['api'],
