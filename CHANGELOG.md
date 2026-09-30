@@ -20,6 +20,8 @@
 ### Fixed
 - `DefaultCacheStrategy::__construct()` and `ValidatorAwareDenormalizer::validate()` declare their nullable parameters
   explicitly, so PHP 8.4 no longer reports them as implicitly nullable
+- `ValidatorAwareDenormalizer::validate()` validates the groups it is given. It passed them to the validator as
+  constraints, so every call with groups failed with a `TypeError`; a call without groups is unchanged
 
 ## 5.2.0
 ### Added
