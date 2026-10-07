@@ -9,8 +9,6 @@
   service ids, classes, arguments, method calls, tags and visibility are unchanged
 - **BREAKING** for subclasses that override `Configuration::getConfigTreeBuilder()`: it declares `: TreeBuilder`, which
   Symfony 7 requires, so the override must declare it too
-- **BREAKING** for subclasses that override `PayseraRestBundle::build()`, `PayseraRestExtension::load()` or
-  `ApiCompilerPass::process()`: they declare `: void`, so the override must declare it too
 - **BREAKING** for subclasses of `PayseraRestExtension` that call `addAnnotatedClassesToCompile()` or
   `getAnnotatedClassesToCompile()`: the extension extends `Symfony\Component\DependencyInjection\Extension\Extension`
   instead of HttpKernel's `Extension`, which is internal since Symfony 7.1 and is the only one of the two that has those

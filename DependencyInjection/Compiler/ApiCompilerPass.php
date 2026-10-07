@@ -9,7 +9,10 @@ use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 
 class ApiCompilerPass implements CompilerPassInterface
 {
-    public function process(ContainerBuilder $container): void
+    /**
+     * @return void
+     */
+    public function process(ContainerBuilder $container)
     {
         $this->processTags(
             $container,
