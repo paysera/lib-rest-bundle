@@ -38,6 +38,9 @@ abstract class ValidatorAwareDenormalizer extends BaseDenormalizer
         if ($this->validator === null) {
             throw new RuntimeException('No validator was set to mapper');
         }
+        if ($groups === []) {
+            return;
+        }
         $violationList = $this->validator->validate($entity, null, $groups);
         if ($violationList->count() > 0) {
             $message = null;

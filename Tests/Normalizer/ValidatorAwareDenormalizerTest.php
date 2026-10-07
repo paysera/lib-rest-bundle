@@ -57,10 +57,10 @@ class ValidatorAwareDenormalizerTest extends TestCase
                 null,
                 [$blank, ['name' => [$blank]]],
             ],
-            'an empty list of groups: the Default group' => [
+            'an empty list of groups: no validation' => [
                 new ValidatedEntity('', ''),
                 [],
-                [$blank, ['name' => [$blank]]],
+                null,
             ],
             'one group' => [
                 new ValidatedEntity('', ''),
