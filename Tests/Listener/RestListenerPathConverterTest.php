@@ -111,7 +111,7 @@ class RestListenerPathConverterTest extends TestCase
     private function createRestListener(PropertyPathConverterInterface $pathConverter)
     {
         $parameterBag = new ParameterBag();
-        $queryParameterBag = new ParameterBag();
+        $queryParameterBag = (new Request())->query;
 
         $entity = [
             'firstName' => 1,

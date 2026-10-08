@@ -21,6 +21,8 @@ class PayseraRestBundle extends Bundle
      * other extensions, ...
      *
      * @param ContainerBuilder $container
+     *
+     * @return void
      */
     public function build(ContainerBuilder $container)
     {

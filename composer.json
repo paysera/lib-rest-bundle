@@ -9,14 +9,13 @@
     "require": {
         "php": ">=7.4",
         "paysera/lib-serializer": "^3.0",
-        "doctrine/orm": "^2.0",
-        "symfony/config": "^4.4 || ^5.0 || ^6.0",
-        "symfony/dependency-injection": "^4.4 || ^5.0 || ^6.0",
-        "symfony/validator": "^4.4 || ^5.0 || ^6.0",
-        "symfony/security-core": "^4.4 || ^5.0 || ^6.0",
-        "symfony/routing": "^4.4 || ^5.0 || ^6.0",
-        "symfony/http-foundation": "^4.4 || ^5.0 || ^6.0",
-        "symfony/http-kernel": "^4.4 || ^5.0 || ^6.0",
+        "symfony/config": "^4.4 || ^5.0 || ^6.0 || ^7.4",
+        "symfony/dependency-injection": "^4.4 || ^5.0 || ^6.0 || ^7.4",
+        "symfony/validator": "^4.4 || ^5.0 || ^6.0 || ^7.4",
+        "symfony/security-core": "^4.4 || ^5.0 || ^6.0 || ^7.4",
+        "symfony/routing": "^4.4 || ^5.0 || ^6.0 || ^7.4",
+        "symfony/http-foundation": "^4.4 || ^5.0 || ^6.0 || ^7.4",
+        "symfony/http-kernel": "^4.4 || ^5.0 || ^6.0 || ^7.4",
         "doctrine/persistence": "^3.2"
     },
     "config": {

@@ -9,7 +9,7 @@ class DefaultCacheStrategy implements CacheStrategyInterface
     protected $maxAge;
     protected $provider;
 
-    public function __construct($maxAge = 0, ModificationDateProviderInterface $provider = null)
+    public function __construct($maxAge = 0, ?ModificationDateProviderInterface $provider = null)
     {
         $this->maxAge = $maxAge;
         $this->provider = $provider;

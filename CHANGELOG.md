@@ -1,5 +1,28 @@
 # Change Log
 
+## 5.3.0
+### Added
+- Support for Symfony 7.4
+### Changed
+- The services are defined in `PayseraRestExtension` instead of `Resources/config/services.xml` and the two files it
+  imported, which are removed, so Symfony 7.4 no longer reports that the XML configuration format is deprecated. The
+  service ids, classes, arguments, method calls, tags and visibility are unchanged
+- **BREAKING** for subclasses that override `Configuration::getConfigTreeBuilder()`: it declares `: TreeBuilder`, which
+  Symfony 7 requires, so the override must declare it too
+- **BREAKING** for subclasses of `PayseraRestExtension` that call `addAnnotatedClassesToCompile()` or
+  `getAnnotatedClassesToCompile()`: the extension extends `Symfony\Component\DependencyInjection\Extension\Extension`
+  instead of HttpKernel's `Extension`, which is internal since Symfony 7.1 and is the only one of the two that has those
+  methods; Symfony has deprecated both, so drop the calls
+### Removed
+- `doctrine/orm` from `require`: the bundle never used it. An application that uses Doctrine ORM requires it itself
+### Fixed
+- `DefaultCacheStrategy::__construct()` and `ValidatorAwareDenormalizer::validate()` declare their nullable parameters
+  explicitly, so PHP 8.4 no longer reports them as implicitly nullable
+- `ValidatorAwareDenormalizer::validate()` validates the groups it is given. It passed `$groups` to the validator as
+  constraints, so a list of group names failed with a `TypeError` and a list of constraint objects was applied as
+  constraints. Now group names select those groups and constraint objects are rejected. An empty list validates nothing
+  and a call without groups validates the Default group, as before
+
 ## 5.2.0
 ### Added
 - Support for Symfony 6.x
