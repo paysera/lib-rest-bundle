@@ -1,5 +1,11 @@
 # Change Log
 
+## 4.4.2
+### Security
+- The "Request header" debug record of `RequestLogger` (channel `paysera_rest.rest_logger`) no longer carries the
+  `Authorization` header. It held the caller's credential: a bearer token, a MAC signature or Basic credentials. The
+  record keeps `Content-Type`
+
 ## 4.4.1
 ### Fixed
 Made service `paysera_rest.service.property_path_converter.camel_case_to_snake_case` public as it is being retrieved directly from the container.

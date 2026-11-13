@@ -31,7 +31,6 @@ class RequestLogger
         }
         if ($parts['header']) {
             $this->logger->debug('Request header', array(
-                'Authorization' => $request->headers->get('AUTHORIZATION'),
                 'Content-Type' => $request->headers->get('CONTENT_TYPE'),
             ));
         }
