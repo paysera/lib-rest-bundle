@@ -1,5 +1,11 @@
 # Change Log
 
+## 5.3.1
+### Security
+- The "Request header" debug record of `RequestLogger` (channel `paysera_rest.rest_logger`) no longer carries the
+  `Authorization` header. It held the caller's credential: a bearer token, a MAC signature or Basic credentials. The
+  record keeps `Content-Type`
+
 ## 5.3.0
 ### Added
 - Support for Symfony 7.4
