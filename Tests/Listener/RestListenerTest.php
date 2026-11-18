@@ -63,6 +63,11 @@ class RestListenerTest extends TestCase
 
     private $storedContext = [];
 
+    protected function tearDown()
+    {
+        Mockery::close();
+    }
+
     public function setUp()
     {
         $this->apiManager = Mockery::mock(ApiManager::class);
