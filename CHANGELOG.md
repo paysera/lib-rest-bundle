@@ -6,8 +6,17 @@
   `Authorization` header. It held the caller's credential: a bearer token, a MAC signature or Basic credentials. The
   record keeps `Content-Type`
 - `RestListener::onKernelException()` no longer writes the exception's string form (message and stack trace) to a debug
-  record (channel `paysera_rest.rest_listener`). The message could quote a request credential, such as the nonce of a
-  MAC `Authorization` header. The record now carries the exception class only
+  record. The record goes to the matched RestApi's logger, or to `paysera_rest.rest_listener` when the request matches
+  no RestApi. The message could quote a request credential, such as the nonce of a MAC `Authorization` header. The
+  record now carries the exception class only
+- The "Setting error response" debug record carries the response status code instead of the response body, which could
+  repeat the exception message
+- The "Invalid data exception caught" notice record of `RestListener` no longer appends the exception's string form to
+  its message. Its context still holds the invalid properties
+- `ExceptionLogger` is unchanged: its record still carries the exception message, with the exception in its context.
+  An application must not put a request credential into an exception message
+### Changed
+- Tests run on GitHub Actions for PHP 7.0, 7.1 and 7.4. The unused Travis CI configuration is removed
 
 ## 4.4.1
 ### Fixed

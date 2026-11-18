@@ -1,4 +1,4 @@
-PayseraRestBundle ![](https://travis-ci.org/paysera/lib-rest-bundle.svg?branch=master)
+PayseraRestBundle
 =================
 
 This bundle provides means for rapid API development.
