@@ -258,7 +258,7 @@ class RestListener
         /** @var Exception $exception */
         $exception = $event->getThrowable();
 
-        $logger->debug($exception);
+        $logger->debug('Exception class', array(get_class($exception)));
 
         $response = $this->apiManager->getResponseForException($request, $exception);
         if ($response !== null) {

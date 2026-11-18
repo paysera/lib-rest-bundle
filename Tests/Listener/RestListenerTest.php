@@ -22,6 +22,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
+use RuntimeException;
+use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Event\KernelEvent;
 use Symfony\Component\HttpKernel\Event\ViewEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
@@ -555,6 +557,27 @@ class RestListenerTest extends TestCase
 
         $this->assertTrue($responseHeaders->has($headerName));
         $this->assertEquals('DENY', $responseHeaders->get($headerName));
+    }
+
+    public function testOnKernelExceptionLogsOnlyTheExceptionClass()
+    {
+        $restListener = $this->createRestListener();
+
+        $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
+        $this->apiManager->shouldReceive('getLogger');
+        $this->apiManager->shouldReceive('getResponseForException')->andReturn(null);
+
+        $event = new ExceptionEvent(
+            Mockery::mock(HttpKernelInterface::class),
+            Mockery::mock(Request::class),
+            $this->getMainRequestType(),
+            new RuntimeException('Authorization: MAC id="client", nonce="secret-nonce", mac="secret-mac"')
+        );
+
+        $restListener->onKernelException($event);
+
+        $this->assertSame(['Handling kernel.exception', 'Exception class'], $this->storedLoggerMessages);
+        $this->assertSame([[$event], [RuntimeException::class]], $this->storedContext);
     }
 
     private function getMainRequestType(): int
