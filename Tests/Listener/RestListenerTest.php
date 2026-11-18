@@ -22,6 +22,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use RuntimeException;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Event\KernelEvent;
@@ -578,6 +579,79 @@ class RestListenerTest extends TestCase
 
         $this->assertSame(['Handling kernel.exception', 'Exception class'], $this->storedLoggerMessages);
         $this->assertSame([[$event], [RuntimeException::class]], $this->storedContext);
+    }
+
+    public function testOnKernelExceptionWithErrorResponseLogsOnlyTheStatusCode()
+    {
+        $restListener = $this->createRestListener();
+        $exception = new RuntimeException('Authorization: MAC id="client", nonce="secret-nonce", mac="secret-mac"');
+        $response = new Response('{"error_description":"nonce=\"secret-nonce\""}', Response::HTTP_UNAUTHORIZED);
+
+        $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
+        $this->apiManager->shouldReceive('getLogger');
+        $this->apiManager->shouldReceive('getResponseForException')->andReturn($response);
+        $this->exceptionLogger->shouldReceive('log')->once()->with($this->logger, $response, $exception);
+
+        $event = new ExceptionEvent(
+            Mockery::mock(HttpKernelInterface::class),
+            Mockery::mock(Request::class),
+            $this->getMainRequestType(),
+            $exception
+        );
+
+        $restListener->onKernelException($event);
+
+        $this->assertSame(
+            ['Handling kernel.exception', 'Exception class', 'Setting error response'],
+            $this->storedLoggerMessages
+        );
+        $this->assertSame(
+            [[$event], [RuntimeException::class], [Response::HTTP_UNAUTHORIZED]],
+            $this->storedContext
+        );
+        $this->assertSame($response, $event->getResponse());
+    }
+
+    public function testOnKernelControllerLogsInvalidDataWithoutTheExceptionString()
+    {
+        $properties = ['field' => ['is invalid']];
+        $invalidDataException = new InvalidDataException('Value nonce="secret-nonce" is invalid');
+        $invalidDataException->setProperties($properties);
+        $this->logger->shouldReceive('notice')->andReturnUsing($this->storeLoggerMessage());
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('getContent');
+        $parameterBag = new ParameterBag();
+        $parameterBag->set('_controller', 'controller');
+        $request->attributes = $parameterBag;
+
+        $requestMapper = Mockery::mock(NameAwareDenormalizerInterface::class);
+        $requestMapper->shouldReceive('mapToEntity')->andReturn([1]);
+        $requestMapper->shouldReceive('getName')->andReturn('requestName');
+
+        $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
+        $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(null);
+
+        $this->kernelEvent->shouldReceive('getRequest')->andReturn($request);
+        $this->apiManager->shouldReceive('getLogger');
+        $this->apiManager->shouldReceive('getSecurityStrategy')->andReturnNull();
+        $this->apiManager->shouldReceive('getRequestQueryMapper')->andReturnNull();
+        $this->apiManager->shouldReceive('getRequestMapper')->andReturn($requestMapper);
+        $this->apiManager->shouldReceive('getValidationGroups')->andReturn([RestApi::DEFAULT_VALIDATION_GROUP]);
+        $this->apiManager->shouldReceive('getRequestLoggingParts')->andReturnNull();
+
+        $propertiesAwareValidator = $this->createPropertiesAwareValidator();
+        $propertiesAwareValidator->shouldReceive('validate')->andThrow($invalidDataException);
+        $this->apiManager->shouldReceive('createPropertiesValidator')->andReturn($propertiesAwareValidator);
+
+        $this->parameterToEntityMapBuilder->shouldReceive('buildParameterToEntityMap')->andReturn([]);
+
+        try {
+            $this->createRestListener()->onKernelController($this->kernelEvent);
+            $this->fail('ApiException was not thrown');
+        } catch (ApiException $exception) {
+            $this->assertSame('Invalid data exception caught', end($this->storedLoggerMessages));
+            $this->assertSame($properties, end($this->storedContext));
+        }
     }
 
     private function getMainRequestType(): int
