@@ -22,7 +22,9 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\FilterControllerEvent;
+use RuntimeException;
 use Symfony\Component\HttpKernel\Event\GetResponseForControllerResultEvent;
+use Symfony\Component\HttpKernel\Event\GetResponseForExceptionEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\Validator\ConstraintViolation;
 use Symfony\Component\Validator\ConstraintViolationList;
@@ -507,6 +509,27 @@ class RestListenerTest extends TestCase
 
         $this->assertTrue($responseHeaders->has($headerName));
         $this->assertEquals('DENY', $responseHeaders->get($headerName));
+    }
+
+    public function testOnKernelExceptionLogsOnlyTheExceptionClass()
+    {
+        $restListener = $this->createRestListener();
+
+        $this->apiManager->shouldReceive('getApiKeyForRequest');
+        $this->apiManager->shouldReceive('getLogger');
+        $this->apiManager->shouldReceive('getResponseForException')->andReturn(null);
+
+        $event = new GetResponseForExceptionEvent(
+            Mockery::mock(HttpKernelInterface::class),
+            Mockery::mock(Request::class),
+            HttpKernelInterface::MASTER_REQUEST,
+            new RuntimeException('Authorization: MAC id="client", nonce="secret-nonce", mac="secret-mac"')
+        );
+
+        $restListener->onKernelException($event);
+
+        $this->assertSame(['Handling kernel.exception', 'Exception class'], $this->storedLoggerMessages);
+        $this->assertSame([[$event], [RuntimeException::class]], $this->storedContext);
     }
 
     private function storeLoggerMessage()

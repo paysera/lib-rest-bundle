@@ -5,6 +5,9 @@
 - The "Request header" debug record of `RequestLogger` (channel `paysera_rest.rest_logger`) no longer carries the
   `Authorization` header. It held the caller's credential: a bearer token, a MAC signature or Basic credentials. The
   record keeps `Content-Type`
+- `RestListener::onKernelException()` no longer writes the exception's string form (message and stack trace) to a debug
+  record (channel `paysera_rest.rest_listener`). The message could quote a request credential, such as the nonce of a
+  MAC `Authorization` header. The record now carries the exception class only
 
 ## 4.4.1
 ### Fixed

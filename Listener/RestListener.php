@@ -240,7 +240,7 @@ class RestListener
         $logger = $this->getLogger($request);
 
         $logger->debug('Handling kernel.exception', array($event));
-        $logger->debug($event->getException());
+        $logger->debug('Exception class', array(get_class($event->getException())));
 
         $response = $this->apiManager->getResponseForException($request, $event->getException());
         if ($response !== null) {
