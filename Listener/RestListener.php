@@ -240,12 +240,12 @@ class RestListener
         $logger = $this->getLogger($request);
 
         $logger->debug('Handling kernel.exception', array($event));
-        $logger->debug($event->getException());
+        $logger->debug('Exception class', array(get_class($event->getException())));
 
         $response = $this->apiManager->getResponseForException($request, $event->getException());
         if ($response !== null) {
             $event->setResponse($response);
-            $logger->debug('Setting error response', array($response->getContent()));
+            $logger->debug('Setting error response', array($response->getStatusCode()));
             $exception = $event->getException();
 
             $this->exceptionLogger->log($logger, $response, $exception);
@@ -279,10 +279,7 @@ class RestListener
                 $context = $exception->getProperties();
             }
 
-            $this->getLogger($request)->notice(
-                'Invalid data exception caught: ' . $exception,
-                $context
-            );
+            $this->getLogger($request)->notice('Invalid data exception caught', $context);
             $this->handleException($exception);
         }
     }
