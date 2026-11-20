@@ -723,12 +723,11 @@ class RestListenerTest extends TestCase
         $this->assertSame($response, $event->getResponse());
     }
 
-    public function testOnKernelControllerLogsOnlyTheInvalidPropertyNames()
+    /**
+     * @dataProvider invalidPropertiesDataProvider
+     */
+    public function testOnKernelControllerLogsOnlyTheInvalidPropertyNames(array $properties, array $loggedPropertyNames)
     {
-        $properties = [
-            'password_repeat' => ['This value should be equal to "secret-password".'],
-            'bic' => ['This BIC does not match the IBAN "secret-iban".', 'This value is not valid.'],
-        ];
         $invalidDataException = new InvalidDataException('Value nonce="secret-nonce" is invalid');
         $invalidDataException->setProperties($properties);
         $this->logger->shouldReceive('notice')->andReturnUsing($this->storeLoggerMessage());
@@ -777,11 +776,34 @@ class RestListenerTest extends TestCase
                     ['controller'],
                     ['entity' => 'array'],
                     ['array'],
-                    ['invalid properties' => ['password_repeat', 'bic']],
+                    ['invalid properties' => $loggedPropertyNames],
                 ],
                 $this->storedContext
             );
         }
+    }
+
+    public function invalidPropertiesDataProvider(): array
+    {
+        return [
+            'messages that quote other fields' => [
+                [
+                    'password_repeat' => ['This value should be equal to "secret-password".'],
+                    'bic' => ['This BIC does not match the IBAN "secret-iban".', 'This value is not valid.'],
+                ],
+                ['password_repeat', 'bic'],
+            ],
+            'paths with submitted array keys and indexes' => [
+                [
+                    '[jane.doe@example.com].email' => ['This value is not a valid email address.'],
+                    '[john.doe@example.com].email' => ['This value is not a valid email address.'],
+                    'contacts[secret.contact@example.com]' => ['This value should not be blank.'],
+                    'children[0].iban' => ['This is not a valid IBAN.'],
+                    '[secret-key]' => ['This value should be of type string.'],
+                ],
+                ['email', 'contacts', 'children.iban'],
+            ],
+        ];
     }
 
     private function getMainRequestType(): int
