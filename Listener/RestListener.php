@@ -278,7 +278,7 @@ class RestListener
         } catch (InvalidDataException $exception) {
             $this->getLogger($request)->notice(
                 'Invalid data exception caught',
-                ['invalid properties' => array_keys($exception->getProperties() ?? [])]
+                ['invalid properties' => $this->describeInvalidPropertyNames($exception->getProperties() ?? [])]
             );
             $this->handleException($exception);
         }
@@ -430,5 +430,18 @@ class RestListener
     private function describeLoggedValue($value)
     {
         return is_object($value) ? get_class($value) : gettype($value);
+    }
+
+    private function describeInvalidPropertyNames(array $properties)
+    {
+        $names = [];
+        foreach (array_keys($properties) as $propertyPath) {
+            $name = trim(preg_replace(['/\[[^\]]*\]/', '/\.{2,}/'], ['', '.'], (string)$propertyPath), '.');
+            if ($name !== '') {
+                $names[$name] = $name;
+            }
+        }
+
+        return array_values($names);
     }
 }
