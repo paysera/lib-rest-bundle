@@ -20,11 +20,11 @@
   - "Could not resolve entity from the attribute value" (warning): the attribute name under `attribute name` instead
     of the attribute value under `attribute value `
 - `RestApi::dontLogRequest($controllerKey, 'url')` or `dontLogRequest($controllerKey, 'header')` no longer turns on
-  the "Request content" record, which holds the whole request body. The first such call set all three request logging
-  parts to on, while the default keeps `content` off. Now the other parts keep their defaults
-- Unchanged: the `ExceptionLogger` record still holds the exception in its context, and the "Request content" debug
-  record of `RequestLogger` still holds the request body. Only a RestApi subclass that sets `content` in
-  `$requestLoggingParts` writes it
+  the "Request content" record, which holds the whole request body. The first such call turned the two other parts
+  on, `content` included, while the default keeps `content` off. Now the other parts keep their defaults
+- Unchanged: the `ExceptionLogger` record still holds the exception in its context, and `RequestLogger::log()` still
+  writes the request body when the parts it gets turn `content` on. `RestApi` turns it on only through a subclass
+  that sets `content` in `$requestLoggingParts`
 
 ## 4.4.2
 ### Security
