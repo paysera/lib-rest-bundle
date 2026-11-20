@@ -104,10 +104,9 @@ class RestListener
         $request = $event->getRequest();
         $logger = $this->getLogger($request);
 
-        $controller = $request->attributes->get('_controller');
         $logger->debug(
             'Handling kernel.controller',
-            array(is_string($controller) ? $controller : $this->describeLoggedValue($controller))
+            array($this->describeController($request->attributes->get('_controller')))
         );
 
         $parts = $this->apiManager->getRequestLoggingParts($request);
@@ -416,6 +415,22 @@ class RestListener
         $this->loggersCache[$apiKey] = $logger;
 
         return $logger;
+    }
+
+    /**
+     * @param mixed $controller
+     */
+    private function describeController($controller): string
+    {
+        if (is_string($controller)) {
+            return $controller;
+        }
+
+        if (is_array($controller) && count($controller) === 2 && isset($controller[0], $controller[1])) {
+            return $this->describeController($controller[0]) . '::' . $this->describeController($controller[1]);
+        }
+
+        return $this->describeLoggedValue($controller);
     }
 
     /**

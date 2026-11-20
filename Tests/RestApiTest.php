@@ -129,6 +129,26 @@ class RestApiTest extends TestCase
         $this->assertNull($restApi->getRequestQueryMapper($this->controllerKey));
     }
 
+    /**
+     * @dataProvider requestLoggingPartsProvider
+     */
+    public function testDontLogRequestKeepsTheRequestContentOff(?string $part, array $expectedParts)
+    {
+        $restApi = new RestApi($this->serviceContainer, $this->logger);
+        $restApi->dontLogRequest($this->controllerKey, $part);
+
+        $this->assertSame($expectedParts, $restApi->getRequestLoggingParts($this->controllerKey));
+    }
+
+    public function requestLoggingPartsProvider(): array
+    {
+        return [
+            'url turned off' => ['url', ['url' => false, 'header' => true, 'content' => false]],
+            'header turned off' => ['header', ['url' => true, 'header' => false, 'content' => false]],
+            'every part turned off' => [null, ['url' => false, 'header' => false, 'content' => false]],
+        ];
+    }
+
     private function storeMessage()
     {
         return function ($value) {

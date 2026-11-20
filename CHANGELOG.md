@@ -18,7 +18,8 @@
 - Debug records of `RestListener` no longer carry whole objects. An application's log normalizer expands every
   property of an object, private ones included, so these records held request and response data. The messages are
   unchanged; their context now holds only class names, the controller name and other scalars:
-  - "Handling kernel.controller": the controller name, or the controller's type when it is not a string
+  - "Handling kernel.controller": the controller name; `Class::method` for a class or object and method pair; the
+    controller's type otherwise
   - "Handling kernel.view": the class of the controller result instead of the event
   - "Handling kernel.exception": no context instead of the event, which held the exception, its trace and the error
     response. The "Exception class" record that follows still names the exception class
@@ -31,8 +32,11 @@
     instead of their values
   - "Could not resolve entity from the attribute value" (warning): the attribute name under `attribute name` instead
     of the attribute value under `attribute value `
-- Unchanged: the "Request content" debug record of `RequestLogger` still holds the request body. A RestApi writes the
-  body only when it enables the `content` request logging part
+- `RestApi::dontLogRequest($controllerKey, 'url')` or `dontLogRequest($controllerKey, 'header')` no longer turns on
+  the "Request content" record, which holds the whole request body. The first such call set all three request logging
+  parts to on, while the default keeps `content` off. Now the other parts keep their defaults
+- Unchanged: the "Request content" debug record of `RequestLogger` still holds the request body. Only a RestApi
+  subclass that sets `content` in `$requestLoggingParts` writes it
 ### Changed
 - The unused Travis CI configuration is removed; tests run on GitHub Actions
 
