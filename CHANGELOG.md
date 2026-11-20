@@ -27,7 +27,9 @@
   under `invalid properties`, instead of their validation messages. A message can quote another submitted field, such
   as the compared value of `EqualTo` with `propertyPath`. The names carry no array keys or indexes: each keeps only
   the part before the first `[` and the part after the last `]`, so a key that itself contains brackets is dropped
-  too. `[jane@example.com].email` and `children[0].iban` are logged as `email` and `children.iban`, each name once
+  too. `[jane@example.com].email` and `children[0].iban` are logged as `email` and `children.iban`, each name once.
+  Inside nested collections the middle names are dropped as well: `parents[0].children[0].iban` is logged as
+  `parents.iban`
 - Unchanged: the `ExceptionLogger` record still carries the exception message, with the exception in its context. The
   message can be a validation message: `ValidatorAwareDenormalizer` uses the first violation message as the exception
   message. An application must not put a request credential into an exception message or a validation message

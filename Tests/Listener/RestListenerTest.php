@@ -759,8 +759,10 @@ class RestListenerTest extends TestCase
                     'children[a]jane.doe@example.com].iban' => ['This is not a valid IBAN.'],
                     'orders[[1] John Doe].amount' => ['This value should be positive.'],
                     'cards[secret-pan' => ['This value is not valid.'],
+                    'orders[0].cards[secret-pan' => ['This value is not valid.'],
+                    'parents[0].children[0].iban' => ['This is not a valid IBAN.'],
                 ],
-                ['contacts', 'children.iban', 'orders.amount', 'cards'],
+                ['contacts', 'children.iban', 'orders.amount', 'cards', 'orders.cards', 'parents.iban'],
             ],
         ];
     }
