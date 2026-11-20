@@ -471,8 +471,17 @@ class RestListener
         }
 
         $lastBracket = strrpos($propertyPath, ']');
-        $nameAfterKeys = $lastBracket > $firstBracket ? substr($propertyPath, $lastBracket + 1) : '';
+        $nameAfterKeys = $lastBracket !== false && $lastBracket > $firstBracket
+            ? $this->cutAtOpenBracket(substr($propertyPath, $lastBracket + 1))
+            : '';
 
         return trim(substr($propertyPath, 0, $firstBracket) . $nameAfterKeys, '.');
+    }
+
+    private function cutAtOpenBracket(string $text): string
+    {
+        $openBracket = strpos($text, '[');
+
+        return $openBracket === false ? $text : substr($text, 0, $openBracket);
     }
 }
