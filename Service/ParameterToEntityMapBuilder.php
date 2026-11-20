@@ -68,7 +68,7 @@ class ParameterToEntityMapBuilder
                 'Could not find the specified attribute name in the request',
                 array(
                     'expected attribute' => $attributeName,
-                    'received attributes' => $attributes,
+                    'received attributes' => array_keys($attributes),
                 )
             );
             throw new InvalidDataException('Could not find the specified attribute name in the request');
@@ -88,12 +88,15 @@ class ParameterToEntityMapBuilder
     private function resolveEntity(AttributeResolverInterface $requestAttributeResolver, $attributeValue)
     {
         $entity = $requestAttributeResolver->resolveFromAttributeValue($attributeValue);
-        $this->logger->debug('Resolved entity from attribute data to ', array($entity));
+        $this->logger->debug(
+            'Resolved entity from attribute data to ',
+            array(is_object($entity) ? get_class($entity) : gettype($entity))
+        );
 
         if ($entity === null) {
             $this->logger->warning(
                 'Could not resolve entity from the attribute value',
-                array('attribute value ' => $attributeValue)
+                array('attribute name' => $requestAttributeResolver->getAttributeName())
             );
             throw new ApiException(
                 ApiException::NOT_FOUND,

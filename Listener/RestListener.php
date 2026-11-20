@@ -99,7 +99,11 @@ class RestListener
         $request = $event->getRequest();
         $logger = $this->getLogger($request);
 
-        $logger->debug('Handling kernel.controller', array($event->getRequest()->attributes->get('_controller')));
+        $controller = $request->attributes->get('_controller');
+        $logger->debug(
+            'Handling kernel.controller',
+            array(is_string($controller) ? $controller : $this->describeLoggedValue($controller))
+        );
 
         if ($this->apiManager->isRestRequest($request) && $parts = $this->apiManager->getRequestLoggingParts($request)) {
             $this->requestLogger->log($request, $parts);
@@ -133,7 +137,7 @@ class RestListener
         $request = $event->getRequest();
         $logger = $this->getLogger($request);
 
-        $logger->debug('Handling kernel.view', array($event));
+        $logger->debug('Handling kernel.view', array($this->describeLoggedValue($event->getControllerResult())));
 
         if (!$this->apiManager->isRestRequest($request)) {
             $logger->debug('Not rest request');
@@ -164,7 +168,7 @@ class RestListener
             if ($modifiedAt !== null) {
                 $logger->debug(
                     'Setting modified at',
-                    array($modifiedAt, $request->headers->get('If-Modified-Since'))
+                    array($modifiedAt->format(DATE_ATOM), $request->headers->get('If-Modified-Since'))
                 );
                 $response->setLastModified($modifiedAt);
                 $etag = $modifiedAt->getTimestamp();
@@ -239,7 +243,7 @@ class RestListener
         $request = $event->getRequest();
         $logger = $this->getLogger($request);
 
-        $logger->debug('Handling kernel.exception', array($event));
+        $logger->debug('Handling kernel.exception');
         $logger->debug('Exception class', array(get_class($event->getException())));
 
         $response = $this->apiManager->getResponseForException($request, $event->getException());
@@ -265,7 +269,7 @@ class RestListener
         try {
             $validationGroups = $this->apiManager->getValidationGroups($request);
             if (is_array($validationGroups) && count($validationGroups) > 0) {
-                $this->getLogger($request)->debug('Validating entity', array($entity));
+                $this->getLogger($request)->debug('Validating entity', array($this->describeLoggedValue($entity)));
 
                 $propertiesValidator = $this->apiManager->createPropertiesValidator($request);
                 if ($propertiesValidator !== null) {
@@ -316,7 +320,7 @@ class RestListener
             }
             $this->getLogger($request)->debug(
                 'Mapped data to entity',
-                ['entity' => $entity]
+                ['entity' => $this->describeLoggedValue($entity)]
             );
 
             $this->validateEntity($request, $entity);
@@ -343,7 +347,7 @@ class RestListener
                 $this->handleException($exception);
             }
             $this->getLogger($request)->debug('Mapped query data to entity', [
-                'entity' => $entity,
+                'entity' => $this->describeLoggedValue($entity),
             ]);
 
             $this->validateEntity($request, $entity);
@@ -391,5 +395,14 @@ class RestListener
         $this->loggersCache[$apiKey] = $logger;
 
         return $logger;
+    }
+
+    /**
+     * @param mixed $value
+     * @return string
+     */
+    private function describeLoggedValue($value)
+    {
+        return is_object($value) ? get_class($value) : gettype($value);
     }
 }

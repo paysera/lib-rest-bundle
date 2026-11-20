@@ -1,5 +1,27 @@
 # Change Log
 
+## 4.4.3
+### Security
+- Debug records of `RestListener` no longer carry whole objects. An application's log normalizer expands every
+  property of an object, private ones included, so these records held request and response data. The messages are
+  unchanged; their context now holds only class names, the controller name and other scalars:
+  - "Handling kernel.controller": the controller name, or the controller's type when it is not a string
+  - "Handling kernel.view": the class of the controller result instead of the event
+  - "Handling kernel.exception": no context instead of the event, which held the exception, its trace and the error
+    response. The "Exception class" record that follows still names the exception class
+  - "Validating entity", "Mapped data to entity" and "Mapped query data to entity": the class of the entity, or its
+    type when it is not an object, instead of the entity
+  - "Setting modified at": the modification date as an ATOM string instead of the date object
+- `ParameterToEntityMapBuilder` records carry no request data:
+  - "Resolved entity from attribute data to " (debug): the class of the resolved entity instead of the entity
+  - "Could not find the specified attribute name in the request" (warning): the names of the request attributes
+    instead of their values
+  - "Could not resolve entity from the attribute value" (warning): the attribute name under `attribute name` instead
+    of the attribute value under `attribute value `
+- Unchanged: the `ExceptionLogger` record still holds the exception in its context, and the "Request content" debug
+  record of `RequestLogger` still holds the request body. A RestApi writes the body only when it enables the
+  `content` request logging part
+
 ## 4.4.2
 ### Security
 - The "Request header" debug record of `RequestLogger` (channel `paysera_rest.rest_logger`) no longer carries the
