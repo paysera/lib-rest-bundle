@@ -14,8 +14,9 @@
 - The "Invalid data exception caught" notice record of `RestListener` no longer appends the exception's string form to
   its message. Its context holds only the names of the invalid properties, under `invalid properties`, instead of
   their validation messages. A message can quote another submitted field, such as the compared value of `EqualTo`
-  with `propertyPath`. The names carry no array keys or indexes: `[jane@example.com].email` and `children[0].iban`
-  are logged as `email` and `children.iban`, each name once
+  with `propertyPath`. The names carry no array keys or indexes: each keeps only the part before the first `[` and
+  the part after the last `]`, so a key that itself contains brackets is dropped too. `[jane@example.com].email` and
+  `children[0].iban` are logged as `email` and `children.iban`, each name once
 - `ExceptionLogger` is unchanged: its record still carries the exception message, with the exception in its context.
   The message can be a validation message: `ValidatorAwareDenormalizer` uses the first violation message as the
   exception message. An application must not put a request credential into an exception message or a validation
