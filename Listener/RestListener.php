@@ -426,11 +426,23 @@ class RestListener
             return $controller;
         }
 
-        if (is_array($controller) && count($controller) === 2 && isset($controller[0], $controller[1])) {
-            return $this->describeController($controller[0]) . '::' . $this->describeController($controller[1]);
+        if ($this->isClassAndMethodPair($controller)) {
+            return (is_object($controller[0]) ? get_class($controller[0]) : $controller[0]) . '::' . $controller[1];
         }
 
         return $this->describeLoggedValue($controller);
+    }
+
+    /**
+     * @param mixed $controller
+     */
+    private function isClassAndMethodPair($controller): bool
+    {
+        return is_array($controller)
+            && count($controller) === 2
+            && isset($controller[0], $controller[1])
+            && (is_string($controller[0]) || is_object($controller[0]))
+            && is_string($controller[1]);
     }
 
     /**

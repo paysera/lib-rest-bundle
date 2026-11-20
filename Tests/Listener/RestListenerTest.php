@@ -664,6 +664,7 @@ class RestListenerTest extends TestCase
                 [new ArrayObject(['card_number' => 'secret-card-number']), 'getCardAction'],
                 'ArrayObject::getCardAction',
             ],
+            'controller nested array' => [['CardController', ['getCardAction', 'previewAction']], 'array'],
             'controller closure' => [function () {
                 return 'secret-card-number';
             }, Closure::class],
