@@ -5,9 +5,10 @@
 - Debug records of `RestListener` no longer carry whole objects. An application's log normalizer expands every
   property of an object, private ones included, so these records held request and response data. The messages are
   unchanged; their context now holds only class names, the controller name and other scalars:
-  - "Handling kernel.controller": the controller name; `Class::method` for a class or object and method pair; the
-    controller's type otherwise
-  - "Handling kernel.view": the class of the controller result instead of the event
+  - "Handling kernel.controller": the controller name; `Class::method` for a class or object and method pair;
+    otherwise the controller's class, or its type when it is not an object
+  - "Handling kernel.view": the class of the controller result, or its type when it is not an object, instead of the
+    event
   - "Handling kernel.exception": no context instead of the event, which held the exception, its trace and the error
     response. The "Exception class" record that follows still names the exception class
   - "Validating entity", "Mapped data to entity" and "Mapped query data to entity": the class of the entity, or its
@@ -22,9 +23,14 @@
 - `RestApi::dontLogRequest($controllerKey, 'url')` or `dontLogRequest($controllerKey, 'header')` no longer turns on
   the "Request content" record, which holds the whole request body. The first such call turned the two other parts
   on, `content` included, while the default keeps `content` off. Now the other parts keep their defaults
-- Unchanged: the `ExceptionLogger` record still holds the exception in its context, and `RequestLogger::log()` still
-  writes the request body when the parts it gets turn `content` on. `RestApi` turns it on only through a subclass
-  that sets `content` in `$requestLoggingParts`
+- The "Invalid data exception caught" notice record of `RestListener` holds only the names of the invalid properties,
+  under `invalid properties`, instead of their validation messages. A message can quote another submitted field, such
+  as the compared value of `EqualTo` with `propertyPath`
+- Unchanged: the `ExceptionLogger` record still carries the exception message, with the exception in its context. The
+  message can be a validation message: `ValidatorAwareDenormalizer` uses the first violation message as the exception
+  message. An application must not put a request credential into an exception message or a validation message
+- Unchanged: `RequestLogger::log()` still writes the request body when the parts it gets turn `content` on. `RestApi`
+  turns it on only through a subclass that sets `content` in `$requestLoggingParts`
 
 ## 4.4.2
 ### Security

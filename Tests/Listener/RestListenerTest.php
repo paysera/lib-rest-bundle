@@ -674,9 +674,12 @@ class RestListenerTest extends TestCase
         $this->assertSame($response, $event->getResponse());
     }
 
-    public function testOnKernelControllerLogsInvalidDataWithoutTheExceptionString()
+    public function testOnKernelControllerLogsOnlyTheInvalidPropertyNames()
     {
-        $properties = ['field' => ['is invalid']];
+        $properties = [
+            'password_repeat' => ['This value should be equal to "secret-password".'],
+            'bic' => ['This BIC does not match the IBAN "secret-iban".', 'This value is not valid.'],
+        ];
         $invalidDataException = new InvalidDataException('Value nonce="secret-nonce" is invalid');
         $invalidDataException->setProperties($properties);
         $this->logger->shouldReceive('notice')->andReturnUsing($this->storeLoggerMessage());
@@ -709,8 +712,24 @@ class RestListenerTest extends TestCase
             $this->createRestListener()->onKernelController($this->filterControllerEvent);
             $this->fail('ApiException was not thrown');
         } catch (ApiException $exception) {
-            $this->assertSame('Invalid data exception caught', end($this->storedLoggerMessages));
-            $this->assertSame($properties, end($this->storedContext));
+            $this->assertSame(
+                [
+                    'Handling kernel.controller',
+                    'Mapped data to entity',
+                    'Validating entity',
+                    'Invalid data exception caught',
+                ],
+                $this->storedLoggerMessages
+            );
+            $this->assertSame(
+                [
+                    ['controller'],
+                    ['entity' => 'array'],
+                    ['array'],
+                    ['invalid properties' => ['password_repeat', 'bic']],
+                ],
+                $this->storedContext
+            );
         }
     }
 
