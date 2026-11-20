@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Paysera\Bundle\RestBundle\Tests\Service;
 
 use ArrayObject;
@@ -48,7 +50,12 @@ class ParameterToEntityMapBuilderTest extends TestCase
     public function testBuildParameterToEntityMapLogsOnlyTheEntityClass()
     {
         $entity = new ArrayObject(['iban' => 'secret-iban']);
-        $this->attributeResolver->shouldReceive('resolveFromAttributeValue')->once()->with('secret-iban')->andReturn($entity);
+        $this->attributeResolver
+            ->shouldReceive('resolveFromAttributeValue')
+            ->once()
+            ->with('secret-iban')
+            ->andReturn($entity)
+        ;
         $this->logger->shouldReceive('debug')->once()->andReturnUsing($this->storeRecord('debug'));
 
         $map = $this->builder->buildParameterToEntityMap($this->createRequest(['iban' => 'secret-iban']));
@@ -81,7 +88,12 @@ class ParameterToEntityMapBuilderTest extends TestCase
 
     public function testBuildParameterToEntityMapLogsOnlyTheAttributeNameWhenNoEntityIsResolved()
     {
-        $this->attributeResolver->shouldReceive('resolveFromAttributeValue')->once()->with('secret-iban')->andReturnNull();
+        $this->attributeResolver
+            ->shouldReceive('resolveFromAttributeValue')
+            ->once()
+            ->with('secret-iban')
+            ->andReturnNull()
+        ;
         $this->logger->shouldReceive('debug')->once()->andReturnUsing($this->storeRecord('debug'));
         $this->logger->shouldReceive('warning')->once()->andReturnUsing($this->storeRecord('warning'));
 

@@ -293,13 +293,10 @@ class RestListener
                 }
             }
         } catch (InvalidDataException $exception) {
-            $context = [];
-
-            if ($exception->getProperties() !== null) {
-                $context = $exception->getProperties();
-            }
-
-            $this->getLogger($request)->notice('Invalid data exception caught', $context);
+            $this->getLogger($request)->notice(
+                'Invalid data exception caught',
+                ['invalid properties' => array_keys($exception->getProperties() ?? [])]
+            );
             $this->handleException($exception);
         }
     }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Paysera\Bundle\RestBundle\Tests\Service;
 
 use Paysera\Bundle\RestBundle\Service\RequestLogger;

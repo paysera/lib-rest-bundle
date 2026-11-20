@@ -12,15 +12,20 @@
 - The "Setting error response" debug record carries the response status code instead of the response body, which could
   repeat the exception message
 - The "Invalid data exception caught" notice record of `RestListener` no longer appends the exception's string form to
-  its message. Its context still holds the invalid properties
+  its message. Its context holds only the names of the invalid properties, under `invalid properties`, instead of
+  their validation messages. A message can quote another submitted field, such as the compared value of `EqualTo`
+  with `propertyPath`
 - `ExceptionLogger` is unchanged: its record still carries the exception message, with the exception in its context.
-  An application must not put a request credential into an exception message
+  The message can be a validation message: `ValidatorAwareDenormalizer` uses the first violation message as the
+  exception message. An application must not put a request credential into an exception message or a validation
+  message
 - Debug records of `RestListener` no longer carry whole objects. An application's log normalizer expands every
   property of an object, private ones included, so these records held request and response data. The messages are
   unchanged; their context now holds only class names, the controller name and other scalars:
-  - "Handling kernel.controller": the controller name; `Class::method` for a class or object and method pair; the
-    controller's type otherwise
-  - "Handling kernel.view": the class of the controller result instead of the event
+  - "Handling kernel.controller": the controller name; `Class::method` for a class or object and method pair;
+    otherwise the controller's class, or its type when it is not an object
+  - "Handling kernel.view": the class of the controller result, or its type when it is not an object, instead of the
+    event
   - "Handling kernel.exception": no context instead of the event, which held the exception, its trace and the error
     response. The "Exception class" record that follows still names the exception class
   - "Validating entity", "Mapped data to entity" and "Mapped query data to entity": the class of the entity, or its
