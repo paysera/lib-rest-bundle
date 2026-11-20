@@ -2,9 +2,13 @@
 
 namespace Paysera\Bundle\RestBundle\Tests;
 
+use ArrayObject;
+use Closure;
+use DateTime;
 use Mockery;
 use Mockery\MockInterface;
 use Paysera\Bundle\RestBundle\ApiManager;
+use Paysera\Bundle\RestBundle\Cache\CacheStrategyInterface;
 use Paysera\Bundle\RestBundle\Exception\ApiException;
 use Paysera\Bundle\RestBundle\Listener\RestListener;
 use Paysera\Bundle\RestBundle\Normalizer\NameAwareDenormalizerInterface;
@@ -565,6 +569,102 @@ class RestListenerTest extends TestCase
         $this->assertEquals('DENY', $responseHeaders->get($headerName));
     }
 
+    public function testOnKernelViewLogsOnlyTheResultClassAndTheModificationDate()
+    {
+        $cacheStrategy = Mockery::mock(CacheStrategyInterface::class);
+        $cacheStrategy->shouldReceive('getMaxAge')->andReturn(0);
+        $cacheStrategy->shouldReceive('getModifiedAt')->andReturn(new DateTime('2026-11-20T10:00:00+00:00'));
+
+        $this->apiManager->shouldReceive('getLogger');
+        $this->apiManager->shouldReceive('getCacheStrategy')->andReturn($cacheStrategy);
+        $this->apiManager->shouldReceive('getResponseMapper')->andReturnNull();
+        $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
+        $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(Mockery::mock(RestApi::class));
+
+        $event = new ViewEvent(
+            Mockery::mock(HttpKernelInterface::class),
+            Request::create('/api/v1/cards'),
+            $this->getMainRequestType(),
+            new ArrayObject(['card_number' => 'secret-card-number'])
+        );
+
+        $this->createRestListener()->onKernelView($event);
+
+        $this->assertSame(
+            ['Handling kernel.view', 'Setting modified at', 'No response mapper set'],
+            $this->storedLoggerMessages
+        );
+        $this->assertSame(
+            [[ArrayObject::class], ['2026-11-20T10:00:00+00:00', null], null],
+            $this->storedContext
+        );
+    }
+
+    /**
+     * @dataProvider controllerDataProvider
+     */
+    public function testOnKernelControllerLogsOnlyTheClassesOfMappedEntities($controller, string $loggedController)
+    {
+        $request = Mockery::mock(Request::class);
+        $request->shouldReceive('getContent')->andReturn('');
+        $request->attributes = new ParameterBag(['_controller' => $controller]);
+        $request->query = (new Request(['card_number' => 'secret-card-number']))->query;
+
+        $queryMapper = Mockery::mock(NameAwareDenormalizerInterface::class);
+        $queryMapper->shouldReceive('mapToEntity')->andReturn(new ArrayObject(['card_number' => 'secret-card-number']));
+        $queryMapper->shouldReceive('getName')->andReturn('filter');
+        $requestMapper = Mockery::mock(NameAwareDenormalizerInterface::class);
+        $requestMapper->shouldReceive('mapToEntity')->andReturn(['password' => 'secret-password']);
+        $requestMapper->shouldReceive('getName')->andReturn('data');
+        $propertiesAwareValidator = $this->createPropertiesAwareValidator();
+        $propertiesAwareValidator->shouldReceive('validate')->twice();
+
+        $this->kernelEvent->shouldReceive('getRequest')->andReturn($request);
+        $this->requestApiResolver->shouldReceive('getApiKeyForRequest');
+        $this->requestApiResolver->shouldReceive('getApiForRequest')->andReturn(null);
+        $this->apiManager->shouldReceive('getLogger');
+        $this->apiManager->shouldReceive('getRequestLoggingParts')->andReturnNull();
+        $this->apiManager->shouldReceive('getSecurityStrategy')->andReturnNull();
+        $this->apiManager->shouldReceive('getRequestQueryMapper')->andReturn($queryMapper);
+        $this->apiManager->shouldReceive('getRequestMapper')->andReturn($requestMapper);
+        $this->apiManager->shouldReceive('getValidationGroups')->andReturn([RestApi::DEFAULT_VALIDATION_GROUP]);
+        $this->apiManager->shouldReceive('createPropertiesValidator')->andReturn($propertiesAwareValidator);
+        $this->parameterToEntityMapBuilder->shouldReceive('buildParameterToEntityMap')->andReturn([]);
+
+        $this->createRestListener()->onKernelController($this->kernelEvent);
+
+        $this->assertSame(
+            [
+                'Handling kernel.controller',
+                'Mapped query data to entity',
+                'Validating entity',
+                'Mapped data to entity',
+                'Validating entity',
+            ],
+            $this->storedLoggerMessages
+        );
+        $this->assertSame(
+            [
+                [$loggedController],
+                ['entity' => ArrayObject::class],
+                [ArrayObject::class],
+                ['entity' => 'array'],
+                ['array'],
+            ],
+            $this->storedContext
+        );
+    }
+
+    public function controllerDataProvider(): array
+    {
+        return [
+            'controller service name' => ['card_controller:getCardAction', 'card_controller:getCardAction'],
+            'controller closure' => [function () {
+                return 'secret-card-number';
+            }, Closure::class],
+        ];
+    }
+
     public function testOnKernelExceptionLogsOnlyTheExceptionClass()
     {
         $restListener = $this->createRestListener();
@@ -583,7 +683,7 @@ class RestListenerTest extends TestCase
         $restListener->onKernelException($event);
 
         $this->assertSame(['Handling kernel.exception', 'Exception class'], $this->storedLoggerMessages);
-        $this->assertSame([[$event], [RuntimeException::class]], $this->storedContext);
+        $this->assertSame([null, [RuntimeException::class]], $this->storedContext);
     }
 
     public function testOnKernelExceptionWithErrorResponseLogsOnlyTheStatusCode()
@@ -611,7 +711,7 @@ class RestListenerTest extends TestCase
             $this->storedLoggerMessages
         );
         $this->assertSame(
-            [[$event], [RuntimeException::class], [Response::HTTP_UNAUTHORIZED]],
+            [null, [RuntimeException::class], [Response::HTTP_UNAUTHORIZED]],
             $this->storedContext
         );
         $this->assertSame($response, $event->getResponse());
