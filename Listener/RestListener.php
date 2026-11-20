@@ -436,12 +436,25 @@ class RestListener
     {
         $names = [];
         foreach (array_keys($properties) as $propertyPath) {
-            $name = trim(preg_replace(['/\[[^\]]*\]/', '/\.{2,}/'], ['', '.'], (string)$propertyPath), '.');
+            $name = $this->stripArrayKeys((string)$propertyPath);
             if ($name !== '') {
                 $names[$name] = $name;
             }
         }
 
         return array_values($names);
+    }
+
+    private function stripArrayKeys($propertyPath)
+    {
+        $firstBracket = strpos($propertyPath, '[');
+        if ($firstBracket === false) {
+            return $propertyPath;
+        }
+
+        $lastBracket = strrpos($propertyPath, ']');
+        $nameAfterKeys = $lastBracket > $firstBracket ? substr($propertyPath, $lastBracket + 1) : '';
+
+        return trim(substr($propertyPath, 0, $firstBracket) . $nameAfterKeys, '.');
     }
 }

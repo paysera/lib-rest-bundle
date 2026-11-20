@@ -752,6 +752,16 @@ class RestListenerTest extends TestCase
                 ],
                 ['email', 'contacts', 'children.iban'],
             ],
+            'submitted array keys that contain brackets' => [
+                [
+                    'contacts[a]LT601010012345678901]' => ['This value should not be blank.'],
+                    '[x]secret[y]' => ['This value should be of type string.'],
+                    'children[a]jane.doe@example.com].iban' => ['This is not a valid IBAN.'],
+                    'orders[[1] John Doe].amount' => ['This value should be positive.'],
+                    'cards[secret-pan' => ['This value is not valid.'],
+                ],
+                ['contacts', 'children.iban', 'orders.amount', 'cards'],
+            ],
         ];
     }
 
