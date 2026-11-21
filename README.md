@@ -1,4 +1,4 @@
-PayseraRestBundle ![](https://travis-ci.org/paysera/lib-rest-bundle.svg?branch=master)
+PayseraRestBundle
 =================
 
 > **Deprecated**, use [https://github.com/paysera/lib-api-bundle](https://github.com/paysera/lib-api-bundle) instead.

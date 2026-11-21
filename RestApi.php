@@ -243,7 +243,7 @@ class RestApi
                 $this->requestLoggingParts[$controllerKey] = array(
                     'url' => true,
                     'header' => true,
-                    'content' => true
+                    'content' => false
                 );
             }
             $this->requestLoggingParts[$controllerKey][$part] = false;
