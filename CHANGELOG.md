@@ -1,5 +1,41 @@
 # Change Log
 
+## 4.4.3
+### Security
+- Debug records of `RestListener` no longer carry whole objects. An application's log normalizer expands every
+  property of an object, private ones included, so these records held request and response data. The messages are
+  unchanged; their context now holds only class names, the controller name and other scalars:
+  - "Handling kernel.controller": the controller name; `Class::method` for a class or object and method pair;
+    otherwise the controller's class, or its type when it is not an object
+  - "Handling kernel.view": the class of the controller result, or its type when it is not an object, instead of the
+    event
+  - "Handling kernel.exception": no context instead of the event, which held the exception, its trace and the error
+    response. The "Exception class" record that follows still names the exception class
+  - "Validating entity", "Mapped data to entity" and "Mapped query data to entity": the class of the entity, or its
+    type when it is not an object, instead of the entity
+  - "Setting modified at": the modification date as an ATOM string instead of the date object
+- `ParameterToEntityMapBuilder` records carry no request data:
+  - "Resolved entity from attribute data to " (debug): the class of the resolved entity instead of the entity
+  - "Could not find the specified attribute name in the request" (warning): the names of the request attributes
+    instead of their values
+  - "Could not resolve entity from the attribute value" (warning): the attribute name under `attribute name` instead
+    of the attribute value under `attribute value `
+- `RestApi::dontLogRequest($controllerKey, 'url')` or `dontLogRequest($controllerKey, 'header')` no longer turns on
+  the "Request content" record, which holds the whole request body. The first such call turned the two other parts
+  on, `content` included, while the default keeps `content` off. Now the other parts keep their defaults
+- The "Invalid data exception caught" notice record of `RestListener` holds only the names of the invalid properties,
+  under `invalid properties`, instead of their validation messages. A message can quote another submitted field, such
+  as the compared value of `EqualTo` with `propertyPath`. The names carry no array keys or indexes: each keeps only
+  the part before the first `[` and the part after the last `]`, so a key that itself contains brackets is dropped
+  too. `[jane@example.com].email` and `children[0].iban` are logged as `email` and `children.iban`, each name once.
+  Inside nested collections the middle names are dropped as well: `parents[0].children[0].iban` is logged as
+  `parents.iban`
+- Unchanged: the `ExceptionLogger` record still carries the exception message, with the exception in its context. The
+  message can be a validation message: `ValidatorAwareDenormalizer` uses the first violation message as the exception
+  message. An application must not put a request credential into an exception message or a validation message
+- Unchanged: `RequestLogger::log()` still writes the request body when the parts it gets turn `content` on. `RestApi`
+  turns it on only through a subclass that sets `content` in `$requestLoggingParts`
+
 ## 4.4.2
 ### Security
 - The "Request header" debug record of `RequestLogger` (channel `paysera_rest.rest_logger`) no longer carries the

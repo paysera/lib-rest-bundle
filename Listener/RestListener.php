@@ -99,7 +99,10 @@ class RestListener
         $request = $event->getRequest();
         $logger = $this->getLogger($request);
 
-        $logger->debug('Handling kernel.controller', array($event->getRequest()->attributes->get('_controller')));
+        $logger->debug(
+            'Handling kernel.controller',
+            array($this->describeController($request->attributes->get('_controller')))
+        );
 
         if ($this->apiManager->isRestRequest($request) && $parts = $this->apiManager->getRequestLoggingParts($request)) {
             $this->requestLogger->log($request, $parts);
@@ -133,7 +136,7 @@ class RestListener
         $request = $event->getRequest();
         $logger = $this->getLogger($request);
 
-        $logger->debug('Handling kernel.view', array($event));
+        $logger->debug('Handling kernel.view', array($this->describeLoggedValue($event->getControllerResult())));
 
         if (!$this->apiManager->isRestRequest($request)) {
             $logger->debug('Not rest request');
@@ -164,7 +167,7 @@ class RestListener
             if ($modifiedAt !== null) {
                 $logger->debug(
                     'Setting modified at',
-                    array($modifiedAt, $request->headers->get('If-Modified-Since'))
+                    array($modifiedAt->format(DATE_ATOM), $request->headers->get('If-Modified-Since'))
                 );
                 $response->setLastModified($modifiedAt);
                 $etag = $modifiedAt->getTimestamp();
@@ -239,7 +242,7 @@ class RestListener
         $request = $event->getRequest();
         $logger = $this->getLogger($request);
 
-        $logger->debug('Handling kernel.exception', array($event));
+        $logger->debug('Handling kernel.exception');
         $logger->debug('Exception class', array(get_class($event->getException())));
 
         $response = $this->apiManager->getResponseForException($request, $event->getException());
@@ -265,7 +268,7 @@ class RestListener
         try {
             $validationGroups = $this->apiManager->getValidationGroups($request);
             if (is_array($validationGroups) && count($validationGroups) > 0) {
-                $this->getLogger($request)->debug('Validating entity', array($entity));
+                $this->getLogger($request)->debug('Validating entity', array($this->describeLoggedValue($entity)));
 
                 $propertiesValidator = $this->apiManager->createPropertiesValidator($request);
                 if ($propertiesValidator !== null) {
@@ -273,13 +276,10 @@ class RestListener
                 }
             }
         } catch (InvalidDataException $exception) {
-            $context = [];
-
-            if ($exception->getProperties() !== null) {
-                $context = $exception->getProperties();
-            }
-
-            $this->getLogger($request)->notice('Invalid data exception caught', $context);
+            $this->getLogger($request)->notice(
+                'Invalid data exception caught',
+                ['invalid properties' => $this->describeInvalidPropertyNames($exception->getProperties() ?? [])]
+            );
             $this->handleException($exception);
         }
     }
@@ -316,7 +316,7 @@ class RestListener
             }
             $this->getLogger($request)->debug(
                 'Mapped data to entity',
-                ['entity' => $entity]
+                ['entity' => $this->describeLoggedValue($entity)]
             );
 
             $this->validateEntity($request, $entity);
@@ -343,7 +343,7 @@ class RestListener
                 $this->handleException($exception);
             }
             $this->getLogger($request)->debug('Mapped query data to entity', [
-                'entity' => $entity,
+                'entity' => $this->describeLoggedValue($entity),
             ]);
 
             $this->validateEntity($request, $entity);
@@ -391,5 +391,79 @@ class RestListener
         $this->loggersCache[$apiKey] = $logger;
 
         return $logger;
+    }
+
+    /**
+     * @param mixed $controller
+     * @return string
+     */
+    private function describeController($controller)
+    {
+        if (is_string($controller)) {
+            return $controller;
+        }
+
+        if ($this->isClassAndMethodPair($controller)) {
+            return (is_object($controller[0]) ? get_class($controller[0]) : $controller[0]) . '::' . $controller[1];
+        }
+
+        return $this->describeLoggedValue($controller);
+    }
+
+    /**
+     * @param mixed $controller
+     * @return bool
+     */
+    private function isClassAndMethodPair($controller)
+    {
+        return is_array($controller)
+            && count($controller) === 2
+            && isset($controller[0], $controller[1])
+            && (is_string($controller[0]) || is_object($controller[0]))
+            && is_string($controller[1]);
+    }
+
+    /**
+     * @param mixed $value
+     * @return string
+     */
+    private function describeLoggedValue($value)
+    {
+        return is_object($value) ? get_class($value) : gettype($value);
+    }
+
+    private function describeInvalidPropertyNames(array $properties)
+    {
+        $names = [];
+        foreach (array_keys($properties) as $propertyPath) {
+            $name = $this->stripArrayKeys((string)$propertyPath);
+            if ($name !== '') {
+                $names[$name] = $name;
+            }
+        }
+
+        return array_values($names);
+    }
+
+    private function stripArrayKeys($propertyPath)
+    {
+        $firstBracket = strpos($propertyPath, '[');
+        if ($firstBracket === false) {
+            return $propertyPath;
+        }
+
+        $lastBracket = strrpos($propertyPath, ']');
+        $nameAfterKeys = $lastBracket !== false && $lastBracket > $firstBracket
+            ? $this->cutAtOpenBracket(substr($propertyPath, $lastBracket + 1))
+            : '';
+
+        return trim(substr($propertyPath, 0, $firstBracket) . $nameAfterKeys, '.');
+    }
+
+    private function cutAtOpenBracket($text)
+    {
+        $openBracket = strpos($text, '[');
+
+        return $openBracket === false ? $text : substr($text, 0, $openBracket);
     }
 }
